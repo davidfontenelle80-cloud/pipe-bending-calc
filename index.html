@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#09090b" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<meta name="apple-mobile-web-app-title" content="Pipe Bend Calc" />
+<title>Pipe Bending Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  html, body, #root { margin: 0; padding: 0; min-height: 100%; background: #09090b; }
+  * { box-sizing: border-box; }
+  body { -webkit-tap-highlight-color: transparent; overscroll-behavior: none; color: #fafafa; font-family: 'JetBrains Mono', monospace; }
+  .display { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; }
+  .input-field { background: #0a0a0a; border: 1px solid #3f3f46; color: #fafafa; padding: 14px 12px; width: 100%; font-family: 'JetBrains Mono', monospace; font-size: 16px; border-radius: 2px; font-weight: 500; }
+  .input-field:focus { outline: none; border-color: #fbbf24; box-shadow: 0 0 0 1px #fbbf24; }
+  select.input-field { appearance: none; background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23fbbf24' d='M6 9L1 4h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+  .label { color: #a1a1aa; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 8px; display: block; font-weight: 600; }
+  .card { background: #09090b; border: 1px solid #27272a; border-radius: 2px; margin-bottom: 12px; }
+  .stripe { background: repeating-linear-gradient(45deg, #fbbf24, #fbbf24 8px, #18181b 8px, #18181b 16px); height: 6px; margin-bottom: 12px; }
+  .row { border-bottom: 1px solid #27272a; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .row:last-child { border-bottom: none; }
+  .row-highlight { background: #1c1917; }
+  .row-highlight .row-value { color: #fbbf24; font-weight: 700; font-size: 18px; }
+  .row-value { font-size: 14px; font-weight: 600; }
+  .row-label { color: #d4d4d8; font-size: 13px; }
+  .pill { background: #27272a; color: #fbbf24; padding: 4px 10px; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; border-radius: 2px; font-weight: 700; }
+  .seg-btn { flex: 1; background: #18181b; border: 1px solid #3f3f46; color: #d4d4d8; padding: 12px 6px; font-size: 12px; letter-spacing: 0.04em; font-weight: 600; cursor: pointer; transition: all 0.12s; border-radius: 2px; font-family: inherit; text-transform: uppercase; min-height: 44px; }
+  .seg-btn:hover { border-color: #71717a; }
+  .seg-btn.active { background: #fbbf24; border-color: #fbbf24; color: #09090b; font-weight: 700; }
+  .bend-btn { background: #18181b; border: 1px solid #3f3f46; color: #d4d4d8; padding: 8px 6px; font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; cursor: pointer; transition: all 0.12s; border-radius: 2px; font-family: inherit; line-height: 1.2; min-height: 78px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+  .bend-btn:hover { border-color: #71717a; }
+  .bend-btn.active { background: #fbbf24; border-color: #fbbf24; color: #09090b; font-weight: 700; }
+  .angle-btn { background: #18181b; border: 1px solid #3f3f46; color: #d4d4d8; padding: 12px 4px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; border-radius: 2px; min-height: 44px; }
+  .angle-btn.active { background: #fbbf24; border-color: #fbbf24; color: #09090b; font-weight: 700; }
+  .error { background: #450a0a; border: 1px solid #7f1d1d; color: #fca5a5; padding: 16px; border-radius: 2px; font-size: 13px; font-weight: 600; }
+  .step-list { counter-reset: step; padding: 4px 0; }
+  .step { counter-increment: step; background: #0f0f10; border-left: 3px solid #fbbf24; padding: 12px 14px 12px 44px; margin-bottom: 6px; font-size: 13px; line-height: 1.55; color: #e4e4e7; position: relative; }
+  .step::before { content: counter(step); position: absolute; left: 12px; top: 12px; font-family: 'Bebas Neue', sans-serif; color: #fbbf24; font-size: 18px; font-weight: 700; width: 22px; text-align: right; }
+  .toggle { background: #18181b; border: 1px solid #3f3f46; color: #d4d4d8; padding: 8px 14px; font-size: 11px; cursor: pointer; letter-spacing: 0.1em; text-transform: uppercase; border-radius: 2px; font-weight: 600; font-family: inherit; }
+  .toggle.on { background: #fbbf24; color: #09090b; border-color: #fbbf24; }
+  .step-label { display: inline-block; background: #fbbf24; color: #09090b; padding: 2px 8px; font-family: 'Bebas Neue', sans-serif; font-size: 14px; margin-right: 8px; border-radius: 2px; font-weight: 700; }
+  .info-banner { background: #0f1011; border: 1px solid #fbbf24; border-left-width: 4px; padding: 10px 14px; font-size: 12px; color: #d4d4d8; font-weight: 600; margin-top: 12px; }
+  .warn-banner { background: #1c1410; border: 1px solid #f97316; border-left-width: 4px; padding: 10px 14px; font-size: 12px; color: #fed7aa; font-weight: 600; margin-top: 12px; }
+  .switch { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .switch-track { width: 40px; height: 22px; background: #3f3f46; border-radius: 11px; position: relative; transition: 0.2s; }
+  .switch-track.on { background: #fbbf24; }
+  .switch-thumb { position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; background: #fff; border-radius: 50%; transition: 0.2s; }
+  .switch-track.on .switch-thumb { left: 20px; background: #09090b; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .grid-6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  @media (max-width: 600px) {
+    .grid-4, .grid-6 { grid-template-columns: repeat(3, 1fr); }
+    .grid-5 { grid-template-columns: repeat(5, 1fr); }
+  }
+  .flex { display: flex; }
+  .gap-2 { gap: 8px; }
+  optgroup { color: #fbbf24; font-weight: 700; }
+  .loading { display: flex; align-items: center; justify-content: center; min-height: 100vh; color: #fbbf24; font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 0.1em; }
+</style>
+</head>
+<body>
+<div id="root"><div class="loading">LOADING...</div></div>
+
+<script type="text/babel" data-type="module">
+const { useState, useMemo, useEffect } = React;
+
+const HAND_BENDER_DATA = {
+  EMT: { "1/2": { takeUp: 5, gain: 2.25, radius: 4.0 }, "3/4": { takeUp: 6, gain: 3.25, radius: 4.5 }, "1": { takeUp: 8, gain: 4.5, radius: 5.75 }, "1-1/4": { takeUp: 11, gain: 6.5, radius: 7.25 } },
+  RMC: { "1/2": { takeUp: 6, gain: 3.25, radius: 4.5 }, "3/4": { takeUp: 8, gain: 4.5, radius: 5.75 }, "1": { takeUp: 11, gain: 6.5, radius: 7.25 } },
+  IMC: { "1/2": { takeUp: 6, gain: 3.25, radius: 4.5 }, "3/4": { takeUp: 8, gain: 4.5, radius: 5.75 }, "1": { takeUp: 11, gain: 6.5, radius: 7.25 } },
+};
+
+const MECH_EMT = { "1/2": { takeUp: 5.5, gain: 2.5, radius: 4.5 }, "3/4": { takeUp: 6.5, gain: 3.5, radius: 5.25 }, "1": { takeUp: 8, gain: 5, radius: 6.5 }, "1-1/4": { takeUp: 11, gain: 7, radius: 8.25 }, "1-1/2": { takeUp: 13, gain: 9, radius: 9.5 }, "2": { takeUp: 16, gain: 12, radius: 12 } };
+const MECH_RIGID = { "1/2": { takeUp: 5.5, gain: 3, radius: 4 }, "3/4": { takeUp: 6, gain: 4, radius: 4.5 }, "1": { takeUp: 8, gain: 6, radius: 5.75 }, "1-1/4": { takeUp: 11, gain: 9, radius: 7.25 }, "1-1/2": { takeUp: 13, gain: 11, radius: 8.25 }, "2": { takeUp: 16, gain: 14, radius: 9.5 } };
+const HYD_LARGE_RIGID = { "2-1/2": { takeUp: 19, gain: 16, radius: 10.5 }, "3": { takeUp: 22, gain: 19, radius: 13 }, "3-1/2": { takeUp: 25, gain: 22, radius: 15 }, "4": { takeUp: 28, gain: 25, radius: 16 } };
+const HYD_LARGE_EMT = { "2-1/2": { takeUp: 19, gain: 16, radius: 12.5 }, "3": { takeUp: 22, gain: 19, radius: 15 }, "3-1/2": { takeUp: 25, gain: 22, radius: 17 }, "4": { takeUp: 28, gain: 25, radius: 18 } };
+
+const LARGE_BENDERS = {
+  greenlee_555: { label: "Greenlee 555 Classic (mechanical)", handles: { EMT: { ...MECH_EMT }, IMC: { ...MECH_RIGID }, RMC: { ...MECH_RIGID } } },
+  greenlee_1800: { label: "Greenlee 1800 ratchet (1/2 - 1 rigid)", handles: { RMC: { "1/2": { takeUp: 6, gain: 3, radius: 4 }, "3/4": { takeUp: 7, gain: 4, radius: 4.5 }, "1": { takeUp: 9, gain: 5.5, radius: 5.75 } }, IMC: { "1/2": { takeUp: 6, gain: 3, radius: 4 }, "3/4": { takeUp: 7, gain: 4, radius: 4.5 }, "1": { takeUp: 9, gain: 5.5, radius: 5.75 } } } },
+  greenlee_1801: { label: "Greenlee 1801 ratchet (1-1/4 - 1-1/2 rigid)", handles: { RMC: { "1-1/4": { takeUp: 11, gain: 9, radius: 7.25 }, "1-1/2": { takeUp: 13, gain: 11, radius: 8.25 } }, IMC: { "1-1/4": { takeUp: 11, gain: 9, radius: 7.25 }, "1-1/2": { takeUp: 13, gain: 11, radius: 8.25 } } } },
+  greenlee_882: { label: "Greenlee 882 flip-top (1-1/4, 1-1/2, 2)", handles: { EMT: { "1-1/4": MECH_EMT["1-1/4"], "1-1/2": MECH_EMT["1-1/2"], "2": MECH_EMT["2"] }, IMC: { "1-1/4": MECH_RIGID["1-1/4"], "1-1/2": MECH_RIGID["1-1/2"], "2": MECH_RIGID["2"] }, RMC: { "1-1/4": MECH_RIGID["1-1/4"], "1-1/2": MECH_RIGID["1-1/2"], "2": MECH_RIGID["2"] } } },
+  greenlee_880: { label: "Greenlee 880 hydraulic (1/2 - 2 rigid)", handles: { RMC: { ...MECH_RIGID }, IMC: { ...MECH_RIGID } } },
+  greenlee_881: { label: "Greenlee 881 hydraulic (2-1/2 - 4 rigid)", handles: { RMC: { ...HYD_LARGE_RIGID }, IMC: { ...HYD_LARGE_RIGID } } },
+  greenlee_884: { label: "Greenlee 884 hydraulic (1-1/4 - 4 rigid)", handles: { RMC: { "1-1/4": MECH_RIGID["1-1/4"], "1-1/2": MECH_RIGID["1-1/2"], "2": MECH_RIGID["2"], ...HYD_LARGE_RIGID }, IMC: { "1-1/4": MECH_RIGID["1-1/4"], "1-1/2": MECH_RIGID["1-1/2"], "2": MECH_RIGID["2"], ...HYD_LARGE_RIGID } } },
+  greenlee_777: { label: "Greenlee 777 hydraulic (1-1/4 - 4 rigid)", handles: { RMC: { "1-1/4": MECH_RIGID["1-1/4"], "1-1/2": MECH_RIGID["1-1/2"], "2": MECH_RIGID["2"], ...HYD_LARGE_RIGID }, IMC: { "1-1/4": MECH_RIGID["1-1/4"], "1-1/2": MECH_RIGID["1-1/2"], "2": MECH_RIGID["2"], ...HYD_LARGE_RIGID } } },
+  greenlee_881ct: { label: "Greenlee 881CT CamTrack (2-1/2 - 4)", handles: { EMT: { ...HYD_LARGE_EMT }, RMC: { ...HYD_LARGE_RIGID }, IMC: { ...HYD_LARGE_RIGID } } },
+  greenlee_854: { label: "Greenlee 854DX electric", handles: { EMT: { ...MECH_EMT }, RMC: { ...MECH_RIGID }, IMC: { ...MECH_RIGID } } },
+  greenlee_855gx: { label: "Greenlee 855GX programmable", handles: { EMT: { ...MECH_EMT }, RMC: { ...MECH_RIGID }, IMC: { ...MECH_RIGID } } },
+  current_77: { label: "Current Tools 77 electric (1/2 - 2)", handles: { EMT: { ...MECH_EMT }, RMC: { ...MECH_RIGID }, IMC: { ...MECH_RIGID } } },
+  current_77rig: { label: "Current Tools 77RIG (rigid only)", handles: { RMC: { ...MECH_RIGID }, IMC: { ...MECH_RIGID } } },
+  current_750: { label: "Current Tools 750 mechanical (1/2 - 1)", handles: { RMC: { "1/2": { takeUp: 6, gain: 3, radius: 4 }, "3/4": { takeUp: 7, gain: 4, radius: 4.5 }, "1": { takeUp: 9, gain: 5.5, radius: 5.75 } }, IMC: { "1/2": { takeUp: 6, gain: 3, radius: 4 }, "3/4": { takeUp: 7, gain: 4, radius: 4.5 }, "1": { takeUp: 9, gain: 5.5, radius: 5.75 } } } },
+  current_254: { label: "Current Tools 254 hydraulic (2-1/2 - 4)", handles: { EMT: { ...HYD_LARGE_EMT }, RMC: { ...HYD_LARGE_RIGID }, IMC: { ...HYD_LARGE_RIGID } } },
+  southwire_pb2000: { label: "Southwire PB2000 (3/4 - 2)", handles: { EMT: { "3/4": MECH_EMT["3/4"], "1": MECH_EMT["1"], "1-1/4": MECH_EMT["1-1/4"], "1-1/2": MECH_EMT["1-1/2"], "2": MECH_EMT["2"] }, RMC: { "3/4": MECH_RIGID["3/4"], "1": MECH_RIGID["1"], "1-1/4": MECH_RIGID["1-1/4"], "1-1/2": MECH_RIGID["1-1/2"], "2": MECH_RIGID["2"] }, IMC: { "3/4": MECH_RIGID["3/4"], "1": MECH_RIGID["1"], "1-1/4": MECH_RIGID["1-1/4"], "1-1/2": MECH_RIGID["1-1/2"], "2": MECH_RIGID["2"] } } },
+  ridgid_hydraulic: { label: "Ridgid hydraulic bender", handles: { RMC: { "1-1/2": { takeUp: 13, gain: 11, radius: 8.5 }, "2": { takeUp: 16, gain: 14, radius: 9.5 }, "2-1/2": { takeUp: 19, gain: 16, radius: 11 }, "3": { takeUp: 22, gain: 19, radius: 13 }, "4": { takeUp: 28, gain: 25, radius: 16 } } } },
+};
+
+const HAND_SIZES_EMT = ["1/2", "3/4", "1", "1-1/4"];
+const HAND_SIZES_RMC = ["1/2", "3/4", "1"];
+const ALL_SIZES_EMT = ["1/2", "3/4", "1", "1-1/4", "1-1/2", "2", "2-1/2", "3", "3-1/2", "4"];
+const ALL_SIZES_RMC = ["1/2", "3/4", "1", "1-1/4", "1-1/2", "2", "2-1/2", "3", "3-1/2", "4", "5", "6"];
+const PVC_SIZES = ["1/2", "3/4", "1", "1-1/4", "1-1/2", "2", "2-1/2", "3", "3-1/2", "4", "5", "6"];
+
+const sizesForConduit = (c) => c === "EMT" ? ALL_SIZES_EMT : (c === "RMC" || c === "IMC") ? ALL_SIZES_RMC : c === "PVC" ? PVC_SIZES : [];
+const isHandBendable = (c, s) => c === "EMT" ? HAND_SIZES_EMT.includes(s) : (c === "RMC" || c === "IMC") ? HAND_SIZES_RMC.includes(s) : false;
+const isFactorySweepOnly = (s) => s === "5" || s === "6";
+
+const CONDUIT_TYPES = [{ id: "EMT", label: "EMT" }, { id: "RMC", label: "Rigid (RMC)" }, { id: "IMC", label: "IMC" }, { id: "PVC", label: "PVC" }];
+const ANGLES = { 10: { mult: 6.0, shrink: 1/16 }, 22.5: { mult: 2.6, shrink: 3/16 }, 30: { mult: 2.0, shrink: 1/4 }, 45: { mult: 1.4, shrink: 3/8 }, 60: { mult: 1.2, shrink: 1/2 } };
+
+const BEND_TYPES = [
+  { id: "stub", label: "Stub-up (90)", desc: "Single 90° bend.", useWhen: "Turn a corner, exit a wall, come up out of floor." },
+  { id: "back2back", label: "Back-to-back", desc: "Two 90° bends pointing same direction.", useWhen: "Run between two walls where both ends turn up." },
+  { id: "reverse90", label: "Reverse 90", desc: "Single 90° bent from opposite end.", useWhen: "Stub longer than 60 inches." },
+  { id: "kicked90", label: "Kicked 90", desc: "90 with small offset added on the long leg.", useWhen: "Stub needs to land at a point offset from the wall (panel standoff, recessed box)." },
+  { id: "offset", label: "Offset", desc: "Two equal bends, pipe steps over.", useWhen: "Over a flat obstacle, staying parallel to original run." },
+  { id: "saddle3", label: "3-bend saddle", desc: "Center bend + two outer half-angle bends.", useWhen: "Crossing a single round obstacle (pipe, conduit)." },
+  { id: "saddle4", label: "4-bend saddle", desc: "Two offsets back-to-back with flat between.", useWhen: "Crossing a wider obstacle like a beam." },
+  { id: "rolling", label: "Rolling offset", desc: "Offset where pipe shifts in two planes (up and sideways).", useWhen: "Around a corner while changing height at the same time." },
+  { id: "parallel", label: "Parallel offsets", desc: "Multiple pipes with same offset, kept parallel.", useWhen: "Multiple pipes step over same obstacle and stay aligned." },
+  { id: "concentric", label: "Concentric", desc: "Multiple pipes sweeping around common center.", useWhen: "Multiple pipes turning a corner together." },
+  { id: "segmented", label: "Segmented", desc: "Many small bends approximating a large smooth curve.", useWhen: "Need larger radius than your shoe produces." },
+];
+
+const STORAGE = {
+  get(key) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch { return null; } },
+  set(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} },
+};
+
+const fmtFracIn = (d) => {
+  if (d === null || d === undefined || !isFinite(d)) return "--";
+  if (Math.abs(d) < 1/32) return `0"`;
+  const sign = d < 0 ? "-" : "";
+  const abs = Math.abs(d);
+  const whole = Math.floor(abs);
+  let s = Math.round((abs - whole) * 16);
+  let w = whole;
+  if (s === 16) { w += 1; s = 0; }
+  if (s === 0) return `${sign}${w}"`;
+  let n = s, dd = 16;
+  while (n % 2 === 0 && dd % 2 === 0) { n /= 2; dd /= 2; }
+  return w === 0 ? `${sign}${n}/${dd}"` : `${sign}${w} ${n}/${dd}"`;
+};
+const fmtMm = (d) => isFinite(d) ? `${(d * 25.4).toFixed(0)} mm` : "--";
+const fmt = (d, u) => u === "metric" ? fmtMm(d) : fmtFracIn(d);
+const fmtDec = (n, p = 2) => isFinite(n) ? n.toFixed(p) : "--";
+const num = (v, fb = 0) => { const n = parseFloat(v); return isNaN(n) ? fb : n; };
+
+function getShoeData(conduit, size, largeBenderId, customBenders) {
+  if (largeBenderId && customBenders[largeBenderId]) return customBenders[largeBenderId].handles?.[conduit]?.[size] || null;
+  if (conduit === "PVC") return { takeUp: 0, gain: 0, radius: 0 };
+  if (isHandBendable(conduit, size)) return HAND_BENDER_DATA[conduit]?.[size] || null;
+  return LARGE_BENDERS[largeBenderId]?.handles?.[conduit]?.[size] || null;
+}
+function availableLargeBenders(conduit, size, customBenders) {
+  const builtin = Object.entries(LARGE_BENDERS).filter(([_, b]) => b.handles[conduit]?.[size]);
+  const custom = Object.entries(customBenders).filter(([_, b]) => b.handles?.[conduit]?.[size]);
+  return [...builtin, ...custom];
+}
+const FACTORY_SWEEP_RADIUS = { "5": { standard: 24, large: 30 }, "6": { standard: 30, large: 36 } };
+
+const BendIcon = ({ type, size = 40, color = "currentColor" }) => {
+  const s = { stroke: color, strokeWidth: 3, fill: "none", strokeLinecap: "round", strokeLinejoin: "round" };
+  const paths = {
+    stub: <path d="M 5 30 L 38 30 Q 45 30 45 23 L 45 8" {...s} />,
+    back2back: <path d="M 8 30 L 8 18 Q 8 10 15 10 L 45 10 Q 52 10 52 18 L 52 30" {...s} />,
+    reverse90: <path d="M 8 22 L 45 22 Q 52 22 52 15 L 52 5" {...s} />,
+    kicked90: <path d="M 8 30 L 38 30 Q 45 30 45 23 L 45 18 L 50 12" {...s} />,
+    offset: <path d="M 5 30 L 22 30 L 38 14 L 55 14" {...s} />,
+    saddle3: <g><path d="M 5 28 L 18 28 L 28 14 L 32 14 L 42 28 L 55 28" {...s} /><rect x="26" y="26" width="8" height="6" fill={color} opacity="0.3" /></g>,
+    saddle4: <g><path d="M 5 28 L 14 28 L 22 14 L 38 14 L 46 28 L 55 28" {...s} /><rect x="20" y="26" width="20" height="6" fill={color} opacity="0.3" /></g>,
+    rolling: <g><path d="M 5 30 L 22 30 L 38 14 L 55 14" {...s} /><path d="M 22 30 L 38 30 L 38 14" {...s} strokeDasharray="2,2" opacity="0.5" /></g>,
+    parallel: <g><path d="M 5 30 L 18 30 L 32 18 L 55 18" {...s} /><path d="M 5 36 L 24 36 L 38 24 L 55 24" {...s} opacity="0.6" /></g>,
+    concentric: <g><path d="M 5 35 Q 5 5 35 5" {...s} /><path d="M 5 30 Q 10 10 30 10" {...s} opacity="0.65" /></g>,
+    segmented: <path d="M 5 32 L 12 28 L 19 22 L 26 16 L 33 11 L 42 8 L 52 7" {...s} />,
+  };
+  return <svg viewBox="0 0 60 40" width={size * 1.5} height={size} style={{ display: "block" }}>{paths[type] || null}</svg>;
+};
+
+const Mark = ({ x, y, label, sublabel, symbol = "arrow" }) => {
+  const c = "#fbbf24";
+  return (
+    <g>
+      <line x1={x} y1={y - 14} x2={x} y2={y + 14} stroke={c} strokeWidth="2" />
+      <text x={x} y={y - 22} textAnchor="middle" fill={c} fontSize="11" fontFamily="JetBrains Mono" fontWeight="700">{label}</text>
+      {sublabel && <text x={x} y={y + 30} textAnchor="middle" fill="#a1a1aa" fontSize="9" fontFamily="JetBrains Mono">{sublabel}</text>}
+      {symbol === "arrow" && <text x={x} y={y + 5} textAnchor="middle" fill={c} fontSize="14" fontWeight="700">▲</text>}
+      {symbol === "star" && <text x={x} y={y + 5} textAnchor="middle" fill={c} fontSize="14" fontWeight="700">★</text>}
+      {symbol === "notch" && <text x={x} y={y + 5} textAnchor="middle" fill={c} fontSize="14" fontWeight="700">◆</text>}
+    </g>
+  );
+};
+
+const GenericDiagram = ({ marks, units }) => {
+  const xStart = 50, pipeLen = 540;
+  const maxMark = Math.max(...marks.filter(m => m?.value != null).map(m => m.value), 1);
+  const scale = pipeLen / (maxMark * 1.15);
+  return (
+    <svg viewBox="0 0 600 140" style={{ width: "100%", background: "#0a0a0a" }}>
+      <text x="300" y="20" textAnchor="middle" fill="#fbbf24" fontSize="12" fontFamily="Bebas Neue" letterSpacing="1.5">LAYOUT ON STRAIGHT PIPE</text>
+      <g>
+        <line x1={xStart} y1={74} x2={xStart + pipeLen} y2={74} stroke="#52525b" strokeWidth="2" />
+        <line x1={xStart} y1={86} x2={xStart + pipeLen} y2={86} stroke="#52525b" strokeWidth="2" />
+      </g>
+      <text x={xStart} y={65} fill="#a1a1aa" fontSize="10" fontFamily="JetBrains Mono">END</text>
+      {marks.map((m, i) => m?.value != null && (
+        <Mark key={i} x={xStart + m.value * scale} y={80} label={fmt(m.value, units)} sublabel={m.sublabel} symbol={m.symbol || "arrow"} />
+      ))}
+    </svg>
+  );
+};
+
+function pvcSteps() {
+  return [
+    "Plug both ends of the PVC with rags or caps to retain heat.",
+    "Wrap heat blanket around the section, or place in hot box. Heat 60 to 180 seconds depending on size.",
+    "Pipe should sag slightly under its own weight without wrinkling. Do not scorch.",
+    "Form against jig or layout board, hold position, apply wet rag to set.",
+  ];
+}
+
+function factorySweepInfo(size, conduit, units) {
+  const rData = FACTORY_SWEEP_RADIUS[size];
+  if (!rData) return null;
+  const r = rData.standard;
+  const arc90 = (r * Math.PI) / 2;
+  return {
+    rows: [
+      { label: "FIELD BENDING", value: "NOT STANDARD", highlight: true },
+      { label: "Method", value: "Factory sweep elbow" },
+      { label: "Standard radius", value: fmt(r, units) },
+      { label: "Long-radius option", value: fmt(rData.large, units) },
+      { label: "Arc length for 90", value: fmt(arc90, units), highlight: true },
+    ],
+    steps: [
+      `${size}" conduit uses factory sweep elbows. Not field-bent in standard practice.`,
+      `Standard radius for ${size}" ${conduit}: ${fmt(r, units)} per NEC Chapter 9 Table 2.`,
+      `Long-radius option available at ${fmt(rData.large, units)} for easier wire pulling.`,
+      "Order from supplier with 10 percent overage for waste.",
+    ],
+    marks: [],
+  };
+}
+
+// ==========================================================
+// CALCULATION ENGINE - rewritten with field-verified procedures
+// ==========================================================
+
+function calculate(bendType, inputs, shoe, isPVC, angle, options, size, conduit) {
+  if (isFactorySweepOnly(size) && !isPVC) return factorySweepInfo(size, conduit, options.units);
+  if (!shoe && !isPVC) return { error: "Pick a valid combo." };
+  const takeUp = shoe?.takeUp ?? 0, gain = shoe?.gain ?? 0;
+  const a = ANGLES[angle];
+  const shrinkOn = options.shrinkAutoCorrect;
+  const cb = options.criticalBend || "second";
+  const saddleType = options.saddleType || "45_22";
+
+  switch (bendType) {
+    case "stub": {
+      const stub = num(inputs.stub);
+      if (stub <= 0) return { error: "Enter stub height." };
+      if (isPVC) return { rows: [{ label: "Stub height", value: fmt(stub, options.units) }, { label: "Method", value: "PVC heat-form" }], steps: pvcSteps(), marks: [{ value: stub, sublabel: "start" }] };
+      const mark = stub - takeUp;
+      if (mark <= 0) return { error: `Stub of ${fmt(stub, options.units)} is less than bender take-up (${takeUp}").` };
+      const isRigid = conduit === "RMC" || conduit === "IMC";
+      return {
+        rows: [
+          { label: "Bender take-up", value: `${takeUp}"` },
+          { label: "Desired stub height", value: fmt(stub, options.units) },
+          { label: "MARK from end of pipe", value: fmt(mark, options.units), highlight: true },
+        ],
+        steps: [
+          `Measure ${fmt(mark, options.units)} from the end of the pipe and mark with pencil or marker.`,
+          "Set the bender on the floor, handle up. Slide pipe in so the hook of the shoe points toward the end of the pipe.",
+          "Line up the ARROW on the bender with your mark.",
+          "Put your foot on the heel of the bender. Pull the handle down with steady pressure, in one smooth motion, until you reach the 90 degree mark on the bender.",
+          isRigid ? "Overbend a few degrees past 90 to compensate for springback in rigid/IMC, then release." : "Release pressure. Check with a level. If the stub leans, use the handle to gently push it plumb.",
+          `Measure from the back of the bend to the end of the stub. Should equal ${fmt(stub, options.units)}.`,
+        ],
+        marks: [{ value: mark, sublabel: "ARROW" }],
+      };
+    }
+
+    case "back2back": {
+      const stub = num(inputs.stub), b2b = num(inputs.b2b);
+      if (stub <= 0 || b2b <= 0) return { error: "Enter stub height and back-to-back distance." };
+      const m1 = stub - takeUp, m2 = m1 + b2b;
+      return {
+        rows: [
+          { label: "Take-up", value: `${takeUp}"` },
+          { label: "Stub height (each leg)", value: fmt(stub, options.units) },
+          { label: "Back-to-back distance", value: fmt(b2b, options.units) },
+          { label: "FIRST mark (ARROW)", value: fmt(m1, options.units), highlight: true },
+          { label: "SECOND mark (STAR)", value: fmt(m2, options.units), highlight: true },
+        ],
+        steps: [
+          `Measure ${fmt(m1, options.units)} from the end and mark. This is your first bend mark.`,
+          `Measure ${fmt(m2, options.units)} from the SAME end (your reference end) and mark. This is your second bend mark.`,
+          "Bend the first 90: place the pipe in the bender, ARROW on the first mark, hook toward the end. Bend to 90.",
+          "Flip the pipe end-for-end so the first 90 is now on the opposite side.",
+          "Place the second mark on the STAR symbol (back-of-bend marker). The star marks the back of the next 90 with no deduct needed.",
+          "Bend to 90 in the same plane as the first bend. Sight down the pipe before pulling to make sure both bends are aligned.",
+        ],
+        marks: [{ value: m1, sublabel: "ARROW", symbol: "arrow" }, { value: m2, sublabel: "STAR", symbol: "star" }],
+      };
+    }
+
+    case "reverse90": {
+      const stub = num(inputs.stub);
+      if (stub <= 0) return { error: "Enter stub height." };
+      const star = stub;
+      const arrow = stub + (takeUp - gain);
+      return {
+        rows: [
+          { label: "Take-up", value: `${takeUp}"` },
+          { label: "Gain", value: `${gain}"` },
+          { label: "Long-leg stub", value: fmt(stub, options.units) },
+          { label: "Method A: STAR mark (cleanest)", value: fmt(star, options.units), highlight: true },
+          { label: "Method B: ARROW mark", value: fmt(arrow, options.units), highlight: true },
+        ],
+        steps: [
+          "Use this when the stub exceeds about 60 inches and you can't get the bender close enough to the wall.",
+          `Method A (cleanest): measure ${fmt(star, options.units)} from the end, mark, place the STAR on the mark. The bender handle points TOWARD the long end of the pipe.`,
+          `Method B: measure ${fmt(arrow, options.units)} from the end, mark, place the ARROW on the mark, handle toward long end.`,
+          "Stand on the long side of the bender. Pull the bend up to 90 degrees, applying steady pressure.",
+          "The unbent end becomes the stub. The long side stays flat on the floor.",
+        ],
+        marks: [{ value: star, sublabel: "STAR", symbol: "star" }, { value: arrow, sublabel: "ARROW", symbol: "arrow" }],
+      };
+    }
+
+    case "kicked90": {
+      const stub = num(inputs.stub);
+      const kick = num(inputs.kick);
+      if (stub <= 0 || kick <= 0 || !a) return { error: "Enter stub height, kick depth, and angle." };
+      const stubMark = stub - takeUp;
+      // Kick shrink: ~3/16 per inch of kick (Mike Holt / field standard)
+      const kickShrink = kick * (3/16);
+      // Kick mark is measured from back of 90 along the long leg
+      // For a single kick bend at angle, the bend point is approximately at the desired kick distance from end
+      // We give the measurement from back of 90 to the center of the kick bend
+      const kickFromBack90 = num(inputs.kickFromBack90, 6); // default if not given
+      return {
+        rows: [
+          { label: "Bender take-up", value: `${takeUp}"` },
+          { label: "Stub height", value: fmt(stub, options.units) },
+          { label: "Kick depth (offset)", value: fmt(kick, options.units) },
+          { label: "Kick angle", value: `${angle}°` },
+          { label: "STEP 1: Stub mark from end", value: fmt(stubMark, options.units), highlight: true },
+          { label: "STEP 2: Kick mark from back of 90", value: fmt(kickFromBack90, options.units), highlight: true },
+          { label: "Estimated shrink", value: fmt(kickShrink, options.units) },
+        ],
+        steps: [
+          `STEP 1: Bend the 90 first. Measure ${fmt(stubMark, options.units)} from the end of the pipe, place the ARROW on the mark, bend to 90.`,
+          `STEP 2: Lay the pipe flat. From the back of the 90, measure ${fmt(kickFromBack90, options.units)} down the long leg and mark.`,
+          `Place the bender on the pipe with the ARROW on the kick mark. The handle should face AWAY from the 90 (toward the end you'll be lifting).`,
+          `Bend the kick to ${angle}°. Watch the angle scale carefully. Light foot pressure, the kick is shallow.`,
+          `The stub now offsets by the kick depth at the bottom. Check by laying flat and measuring offset of stub from wall reference.`,
+          `Field tip: most electricians eyeball the kick mark location (4 to 8 inches from back of 90) since the exact distance just changes WHERE the kick is, not the kick depth itself.`,
+        ],
+        marks: [{ value: stubMark, sublabel: "STEP 1 ARROW" }],
+      };
+    }
+
+    case "offset": {
+      const offset = num(inputs.offset), d = num(inputs.distFromEnd);
+      if (offset <= 0 || !a) return { error: "Enter offset depth and angle." };
+      const sp = offset * a.mult, sh = offset * a.shrink;
+      let m1 = null, m2 = null;
+      if (d > 0) {
+        if (cb === "second") { m2 = d - (shrinkOn ? sh : 0); m1 = m2 - sp; }
+        else { m1 = d - (shrinkOn ? sh : 0); m2 = m1 + sp; }
+      }
+      return {
+        rows: [
+          { label: "Bend angle", value: `${angle}°` },
+          { label: "Multiplier", value: a.mult.toFixed(2) },
+          { label: "Shrink per inch of offset", value: fmtFracIn(a.shrink) },
+          { label: "Offset depth", value: fmt(offset, options.units) },
+          { label: "DISTANCE BETWEEN MARKS", value: fmt(sp, options.units), highlight: true },
+          { label: "Total shrink", value: fmt(sh, options.units) },
+          { label: "Shrink auto-correct", value: shrinkOn ? "ON" : "OFF" },
+          ...(d > 0 ? [{ label: "First mark from end", value: fmt(m1, options.units), highlight: true }, { label: "Second mark from end", value: fmt(m2, options.units), highlight: true }] : []),
+        ],
+        steps: isPVC ? pvcSteps() : [
+          d > 0 ? `Measure ${fmt(m1, options.units)} from the end and mark. Measure ${fmt(m2, options.units)} from the end and mark.` : `Mark anywhere convenient on the pipe. Measure ${fmt(sp, options.units)} further down and make a second mark.`,
+          "Set the bender on the floor, handle up. Slide pipe in until the first mark lines up with the ARROW.",
+          `Put your foot on the heel, pull the handle until the bender reads ${angle}°. Release.`,
+          "Pull the pipe out. Flip the bender upside down (handle on the floor, pipe held in the air against the bender shoe).",
+          "Rotate the pipe 180° around its long axis so it's now sitting in the bender from the opposite side.",
+          `Slide the pipe forward so the second mark lines up with the ARROW. Bend to ${angle}°.`,
+          "Both legs should now be parallel with the offset between them. Sight down the pipe to confirm both bends are in the same plane.",
+        ],
+        marks: d > 0 ? [{ value: m1, sublabel: `${angle}°` }, { value: m2, sublabel: `${angle}° (rotate 180)` }] : [],
+      };
+    }
+
+    case "saddle3": {
+      const obs = num(inputs.obstruction), d = num(inputs.distFromEnd);
+      if (obs <= 0) return { error: "Enter obstruction height." };
+      // Two configurations supported:
+      // 45/22.5: center 45, outers 22.5, multiplier 2.5, shrink 3/16 per inch
+      // 60/30: center 60, outers 30, multiplier 2.0, shrink 1/4 per inch
+      const config = saddleType === "60_30"
+        ? { centerAngle: 60, outerAngle: 30, multiplier: 2.0, shrinkPer: 1/4, label: "60° / 30° / 60° (tighter profile)" }
+        : { centerAngle: 45, outerAngle: 22.5, multiplier: 2.5, shrinkPer: 3/16, label: "45° / 22.5° / 45° (standard)" };
+      const side = obs * config.multiplier;
+      const sh = obs * config.shrinkPer;
+      let c = null, f = null, sec = null;
+      if (d > 0) { c = d + (shrinkOn ? sh : 0); f = c - side; sec = c + side; }
+      // NOTE: For saddle, shrink is ADDED to reach the desired center point because the saddle shortens the pipe
+      return {
+        rows: [
+          { label: "Configuration", value: config.label },
+          { label: "Obstruction height", value: fmt(obs, options.units) },
+          { label: "CENTER to OUTER mark", value: fmt(side, options.units), highlight: true },
+          { label: `Shrink (${fmtFracIn(config.shrinkPer)} per inch)`, value: fmt(sh, options.units) },
+          { label: "Shrink auto-correct", value: shrinkOn ? "ON (added to center mark)" : "OFF" },
+          ...(c != null ? [
+            { label: "Center mark from end", value: fmt(c, options.units), highlight: true },
+            { label: "First outer mark", value: fmt(f, options.units), highlight: true },
+            { label: "Second outer mark", value: fmt(sec, options.units), highlight: true },
+          ] : []),
+        ],
+        steps: isPVC ? pvcSteps() : [
+          d > 0
+            ? `Mark center at ${fmt(c, options.units)} from end. Mark outers at ${fmt(f, options.units)} and ${fmt(sec, options.units)} from end.`
+            : `Mark center anywhere. Mark outers ${fmt(side, options.units)} on each side of center.`,
+          `Set the bender on the floor. Line up the CENTER mark with the RIM NOTCH (teardrop) on the bender shoe. Bend to ${config.centerAngle}°.`,
+          "Pull the pipe out. Slide forward to the first outer mark.",
+          `Rotate the pipe 180° around its long axis so the bend is now on the OPPOSITE side of the bender.`,
+          `Line up the first outer mark with the ARROW. Bend to ${config.outerAngle}°.`,
+          `Slide pipe forward to the second outer mark. Do NOT rotate (it's already rotated from the previous step).`,
+          `Line up second outer mark with ARROW. Bend to ${config.outerAngle}°.`,
+          "Pipe should now rise over the obstruction and return to original line. Test fit before installing.",
+        ],
+        marks: c != null ? [
+          { value: f, sublabel: `${config.outerAngle}° ARROW`, symbol: "arrow" },
+          { value: c, sublabel: `${config.centerAngle}° NOTCH`, symbol: "notch" },
+          { value: sec, sublabel: `${config.outerAngle}° ARROW`, symbol: "arrow" },
+        ] : [],
+      };
+    }
+
+    case "saddle4": {
+      const obs = num(inputs.obstruction), w = num(inputs.width), d = num(inputs.distFromEnd);
+      if (obs <= 0 || w <= 0) return { error: "Enter obstruction height and width." };
+      const ai = ANGLES[angle] || ANGLES[45];
+      const os = obs * ai.mult, sh = obs * ai.shrink;
+      let m1 = null, m2 = null, m3 = null, m4 = null;
+      if (d > 0) { m1 = d - (shrinkOn ? sh : 0); m2 = m1 + os; m3 = m2 + w; m4 = m3 + os; }
+      return {
+        rows: [
+          { label: "Bend angle (each of 4)", value: `${angle}°` },
+          { label: "Multiplier", value: ai.mult.toFixed(2) },
+          { label: "Obstruction H x W", value: `${fmt(obs, options.units)} x ${fmt(w, options.units)}` },
+          { label: "Mark 1 to Mark 2", value: fmt(os, options.units), highlight: true },
+          { label: "Mark 2 to Mark 3 (= width)", value: fmt(w, options.units), highlight: true },
+          { label: "Mark 3 to Mark 4", value: fmt(os, options.units), highlight: true },
+          { label: "Shrink", value: fmt(sh, options.units) },
+          ...(m1 != null ? [{ label: "Mark 1", value: fmt(m1, options.units), highlight: true }, { label: "Mark 2", value: fmt(m2, options.units), highlight: true }, { label: "Mark 3", value: fmt(m3, options.units), highlight: true }, { label: "Mark 4", value: fmt(m4, options.units), highlight: true }] : []),
+        ],
+        steps: [
+          "Lay out all 4 marks on the pipe before bending.",
+          `Bend 1: ARROW on Mark 1, handle up, bend to ${angle}°. This bend goes UP, off the original line.`,
+          `Slide pipe to Mark 2. Flip bender upside down, rotate pipe 180°.`,
+          `Bend 2: ARROW on Mark 2, bend to ${angle}°. Pipe now runs parallel to original line, but offset over the obstruction.`,
+          `Slide pipe to Mark 3. Flip bender right-side up. Do NOT rotate the pipe again.`,
+          `Bend 3: ARROW on Mark 3, bend to ${angle}°. Pipe starts coming back DOWN off the obstruction.`,
+          `Slide pipe to Mark 4. Flip bender upside down, rotate pipe 180°.`,
+          `Bend 4: ARROW on Mark 4, bend to ${angle}°. Pipe returns to original line.`,
+          "Sight down the pipe at every stage to keep all bends in the same plane.",
+        ],
+        marks: m1 != null ? [{ value: m1, sublabel: `${angle}°` }, { value: m2, sublabel: `${angle}° rot 180` }, { value: m3, sublabel: `${angle}°` }, { value: m4, sublabel: `${angle}° rot 180` }] : [],
+      };
+    }
+
+    case "rolling": {
+      // CORRECTED: roll angle = arctan(horizontal / vertical), not arctan(roll/rise)
+      // Field method: bend first, ROTATE pipe by roll angle, bend second (NOT flip 180)
+      const rise = num(inputs.rise), roll = num(inputs.roll);
+      if (rise <= 0 || roll <= 0 || !a) return { error: "Enter rise, roll, and angle." };
+      const t = Math.sqrt(rise*rise + roll*roll);
+      const sp = t * a.mult;
+      const sh = t * a.shrink;
+      // CORRECT formula: roll angle from vertical = arctan(horizontal / vertical)
+      const rollAngle = (Math.atan2(roll, rise) * 180) / Math.PI;
+      return {
+        rows: [
+          { label: "Rise (vertical)", value: fmt(rise, options.units) },
+          { label: "Roll (horizontal)", value: fmt(roll, options.units) },
+          { label: "TRUE offset (hypotenuse)", value: fmt(t, options.units), highlight: true },
+          { label: "Bend angle (each of 2)", value: `${angle}°` },
+          { label: "MARK SPACING", value: fmt(sp, options.units), highlight: true },
+          { label: "Shrink", value: fmt(sh, options.units) },
+          { label: "PIPE ROTATION between bends", value: `${fmtDec(rollAngle, 1)}°`, highlight: true },
+        ],
+        steps: [
+          `True offset (hypotenuse) = √(${fmt(rise, options.units)}² + ${fmt(roll, options.units)}²) = ${fmt(t, options.units)}`,
+          `Mark two points on the pipe ${fmt(sp, options.units)} apart. Use these as your bend marks.`,
+          "Draw a reference line ALONG THE LENGTH of the pipe with a permanent marker. Tape a torpedo level to the side of the pipe.",
+          `Make the FIRST bend: place pipe in bender, ARROW on first mark, bend up to ${angle}°. Keep the reference line on top (level reads level).`,
+          `ROTATE the pipe ${fmtDec(rollAngle, 1)}° around its long axis. Watch the torpedo level: it should tilt by ${fmtDec(rollAngle, 1)}° from horizontal.`,
+          `Slide pipe forward in the bender to the second mark. Flip bender upside down (same as a regular offset).`,
+          `Make the SECOND bend: ARROW on second mark, bend to ${angle}°. The bend will now be in a plane rotated from the first.`,
+          `Result: pipe shifts UP by ${fmt(rise, options.units)} AND sideways by ${fmt(roll, options.units)} between the two bends.`,
+          "Pro tip: hold the pipe up after the first bend and eyeball the roll. If you can't picture it, your roll angle is probably wrong.",
+        ],
+        marks: [],
+      };
+    }
+
+    case "parallel": {
+      const offset = num(inputs.offset), sc = num(inputs.spacing);
+      if (offset <= 0 || sc <= 0 || !a) return { error: "Enter offset depth, spacing, and angle." };
+      const bs = offset * a.mult;
+      const sh = offset * a.shrink;
+      const adder = sc / Math.tan((angle * Math.PI) / 180);
+      return {
+        rows: [
+          { label: "Bend angle", value: `${angle}°` },
+          { label: "Offset depth", value: fmt(offset, options.units) },
+          { label: "Center-to-center pipe spacing", value: fmt(sc, options.units) },
+          { label: "Mark spacing (lead pipe)", value: fmt(bs, options.units), highlight: true },
+          { label: "Shrink (each pipe)", value: fmt(sh, options.units) },
+          { label: "ADDER per parallel pipe", value: fmt(adder, options.units), highlight: true },
+          { label: "Formula", value: "spacing / tan(angle)" },
+        ],
+        steps: [
+          "Bend the LEAD pipe (the one closest to you on the rack) as a standard offset.",
+          `For each next pipe in the parallel run: move the FIRST mark FORWARD (toward end of pipe) by ${fmt(adder, options.units)}.`,
+          `The distance between the two marks STAYS THE SAME on every pipe: ${fmt(bs, options.units)}.`,
+          "Bend each pipe with the same shoe and same angle, otherwise the radii won't match.",
+          "Lay all pipes side by side after bending. The straight sections should be parallel and the offsets should line up cleanly.",
+          "Pro tip: number each pipe 1, 2, 3, 4 in pencil before bending so you don't mix them up.",
+        ],
+        marks: [],
+      };
+    }
+
+    case "concentric": {
+      const ir = num(inputs.innerRadius), sc = num(inputs.spacing), sw = num(inputs.sweep, 90);
+      if (ir <= 0 || sc <= 0) return { error: "Enter inner pipe radius and pipe spacing." };
+      const sr = (sw * Math.PI) / 180;
+      const rows = [];
+      for (let n = 0; n < 4; n++) {
+        const r = ir + n * sc;
+        rows.push({ label: `Pipe ${n+1}: radius / arc length`, value: `${fmt(r, options.units)} / ${fmt(r * sr, options.units)}`, highlight: n === 0 });
+      }
+      return {
+        rows: [
+          { label: "Total sweep angle", value: `${sw}°` },
+          { label: "Inner pipe radius (centerline)", value: fmt(ir, options.units) },
+          { label: "Center-to-center spacing", value: fmt(sc, options.units) },
+          ...rows,
+        ],
+        steps: [
+          "Concentric bends require a hydraulic bender with segmented bending capability (Greenlee 881, 884, or 777).",
+          "Bend the INNERMOST pipe first using small-angle segments. The developed arc length tells you total bend.",
+          "For each outer pipe, the radius increases by the center-to-center spacing.",
+          "Mark each pipe with its arc length, divide into equal segments, bend each segment by (sweep / segments) degrees.",
+          "Use a layout board with concentric arcs drawn at each radius to verify before installing.",
+          "Hand benders CANNOT produce true concentric bends. Common workaround: use staggered 90 elbows with offsets between them.",
+        ],
+        marks: [],
+      };
+    }
+
+    case "segmented": {
+      const tr = num(inputs.targetRadius), sw = num(inputs.sweep, 90), seg = Math.max(2, Math.round(num(inputs.segments, 6)));
+      if (tr <= 0) return { error: "Enter target radius." };
+      const dps = sw / seg;
+      const sr = (sw * Math.PI) / 180;
+      const tot = tr * sr;
+      const chord = 2 * tr * Math.sin(((dps * Math.PI) / 180) / 2);
+      return {
+        rows: [
+          { label: "Target centerline radius", value: fmt(tr, options.units) },
+          { label: "Total sweep", value: `${sw}°` },
+          { label: "Number of segments", value: `${seg}` },
+          { label: "DEGREES per bend", value: `${fmtDec(dps, 2)}°`, highlight: true },
+          { label: "CHORD (mark spacing)", value: fmt(chord, options.units), highlight: true },
+          { label: "Total developed arc", value: fmt(tot, options.units) },
+        ],
+        steps: [
+          `Mark ${seg} points on the pipe at ${fmt(chord, options.units)} intervals (chord length).`,
+          `Place first mark on the ARROW. Bend to ${fmtDec(dps, 2)}°.`,
+          "Slide pipe to the next mark, do NOT rotate the pipe.",
+          `Bend again to ${fmtDec(dps, 2)}°. Repeat for all marks.`,
+          `Final pipe approximates a smooth ${sw}° sweep at the target radius.`,
+          "Use this when your bender shoe radius is too tight for the desired curve, or for large conduit that can't be bent normally.",
+          "Typical: 6 to 12 segments for a 90° sweep. More segments = smoother curve but more setup time.",
+        ],
+        marks: [],
+      };
+    }
+
+    default: return { error: "Pick a bend type." };
+  }
+}
+
+function PipeBendingCalculator() {
+  const [conduitType, setConduitType] = useState("EMT");
+  const [size, setSize] = useState("3/4");
+  const [largeBenderId, setLargeBenderId] = useState("greenlee_555");
+  const [bendType, setBendType] = useState("stub");
+  const [angle, setAngle] = useState(30);
+  const [inputs, setInputs] = useState({});
+  const [shrinkAutoCorrect, setShrinkAutoCorrect] = useState(true);
+  const [criticalBend, setCriticalBend] = useState("second");
+  const [saddleType, setSaddleType] = useState("45_22");
+  const [units, setUnits] = useState("imperial");
+  const [customBenders, setCustomBenders] = useState({});
+  const [favorites, setFavorites] = useState([]);
+  const [showCustomForm, setShowCustomForm] = useState(false);
+  const [customForm, setCustomForm] = useState({ name: "", conduit: "RMC", size: "2", takeUp: "", gain: "", radius: "" });
+
+  useEffect(() => {
+    setCustomBenders(STORAGE.get("custom_benders") || {});
+    setFavorites(STORAGE.get("favorites") || []);
+    const u = STORAGE.get("units"); if (u) setUnits(u);
+    const s = STORAGE.get("shrink"); if (s !== null) setShrinkAutoCorrect(s);
+  }, []);
+  useEffect(() => { STORAGE.set("units", units); }, [units]);
+  useEffect(() => { STORAGE.set("shrink", shrinkAutoCorrect); }, [shrinkAutoCorrect]);
+
+  const availableSizes = useMemo(() => sizesForConduit(conduitType), [conduitType]);
+  useEffect(() => { if (!availableSizes.includes(size)) setSize(availableSizes[0] || ""); }, [conduitType, availableSizes, size]);
+
+  const handBendable = isHandBendable(conduitType, size);
+  const isPVC = conduitType === "PVC";
+  const factorySweep = isFactorySweepOnly(size) && !isPVC;
+
+  const largeBenders = useMemo(() => availableLargeBenders(conduitType, size, customBenders), [conduitType, size, customBenders]);
+  useEffect(() => {
+    if (!handBendable && !isPVC && !factorySweep && largeBenders.length > 0) {
+      const ok = largeBenders.some(([id]) => id === largeBenderId);
+      if (!ok) setLargeBenderId(largeBenders[0][0]);
+    }
+  }, [handBendable, largeBenders, largeBenderId, isPVC, factorySweep]);
+
+  const shoe = useMemo(() => getShoeData(conduitType, size, handBendable || isPVC ? null : largeBenderId, customBenders), [conduitType, size, largeBenderId, handBendable, isPVC, customBenders]);
+  const result = useMemo(() => calculate(bendType, inputs, shoe, isPVC, angle, { shrinkAutoCorrect, criticalBend, saddleType, units }, size, conduitType), [bendType, inputs, shoe, isPVC, angle, shrinkAutoCorrect, criticalBend, saddleType, units, size, conduitType]);
+
+  const fieldsForBend = {
+    stub: [{ key: "stub", label: "Stub height" }],
+    back2back: [{ key: "stub", label: "Stub height (each leg)" }, { key: "b2b", label: "Back-to-back distance" }],
+    reverse90: [{ key: "stub", label: "Stub height (long leg)" }],
+    kicked90: [{ key: "stub", label: "Stub height" }, { key: "kick", label: "Kick offset depth" }, { key: "kickFromBack90", label: "Kick mark distance from back of 90 (default 6)" }],
+    offset: [{ key: "offset", label: "Offset depth" }, { key: "distFromEnd", label: "Distance from end to obstruction (optional)" }],
+    saddle3: [{ key: "obstruction", label: "Obstruction height" }, { key: "distFromEnd", label: "Distance from end to center (optional)" }],
+    saddle4: [{ key: "obstruction", label: "Obstruction height" }, { key: "width", label: "Obstruction width" }, { key: "distFromEnd", label: "Distance from end to leading edge (optional)" }],
+    rolling: [{ key: "rise", label: "Rise (vertical offset)" }, { key: "roll", label: "Roll (horizontal offset)" }],
+    parallel: [{ key: "offset", label: "Offset depth" }, { key: "spacing", label: "Center-to-center pipe spacing" }],
+    concentric: [{ key: "innerRadius", label: "Inner pipe centerline radius" }, { key: "spacing", label: "Center-to-center spacing" }, { key: "sweep", label: "Total sweep (default 90)" }],
+    segmented: [{ key: "targetRadius", label: "Target centerline radius" }, { key: "sweep", label: "Total sweep (default 90)" }, { key: "segments", label: "Number of segments" }],
+  };
+
+  const showAngle = ["offset", "saddle4", "rolling", "parallel", "kicked90"].includes(bendType);
+  const showCritical = bendType === "offset";
+  const showSaddleType = bendType === "saddle3";
+  const fields = fieldsForBend[bendType] || [];
+  const setInput = (k, v) => setInputs((p) => ({ ...p, [k]: v }));
+  const reset = () => setInputs({});
+
+  const saveFavorite = () => {
+    const fav = { id: Date.now(), conduitType, size, largeBenderId, bendType, angle, label: `${conduitType} ${size}", ${BEND_TYPES.find(b => b.id === bendType)?.label}${showAngle ? ` ${angle}°` : ""}` };
+    const next = [fav, ...favorites].slice(0, 10);
+    setFavorites(next); STORAGE.set("favorites", next);
+  };
+  const loadFavorite = (f) => { setConduitType(f.conduitType); setSize(f.size); if (f.largeBenderId) setLargeBenderId(f.largeBenderId); setBendType(f.bendType); setAngle(f.angle); };
+  const deleteFavorite = (id) => { const next = favorites.filter(f => f.id !== id); setFavorites(next); STORAGE.set("favorites", next); };
+
+  const addCustom = () => {
+    const { name, conduit, size: sz, takeUp, gain, radius } = customForm;
+    if (!name || !takeUp || !gain) return;
+    const id = `custom_${Date.now()}`;
+    const next = { ...customBenders, [id]: { label: `[Custom] ${name}`, handles: { [conduit]: { [sz]: { takeUp: parseFloat(takeUp), gain: parseFloat(gain), radius: parseFloat(radius) || 0 } } } } };
+    setCustomBenders(next); STORAGE.set("custom_benders", next);
+    setShowCustomForm(false);
+    setCustomForm({ name: "", conduit: "RMC", size: "2", takeUp: "", gain: "", radius: "" });
+  };
+  const deleteCustom = (id) => { const next = { ...customBenders }; delete next[id]; setCustomBenders(next); STORAGE.set("custom_benders", next); };
+
+  return (
+    <div style={{ minHeight: "100vh", padding: 12 }}>
+      <div style={{ maxWidth: 800, margin: "0 auto" }}>
+        <div className="stripe"></div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+          <h1 className="display" style={{ fontSize: 40, color: "#fbbf24", margin: 0 }}>PIPE BENDING CALC</h1>
+          <span className="pill">Field Tool</span>
+        </div>
+
+        <div className="card" style={{ padding: 12, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button className={`toggle ${units === "imperial" ? "on" : ""}`} onClick={() => setUnits("imperial")}>IN</button>
+            <button className={`toggle ${units === "metric" ? "on" : ""}`} onClick={() => setUnits("metric")}>MM</button>
+          </div>
+          <div className="switch" onClick={() => setShrinkAutoCorrect(!shrinkAutoCorrect)}>
+            <div className={`switch-track ${shrinkAutoCorrect ? "on" : ""}`}><div className="switch-thumb" /></div>
+            <span style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>Shrink Auto-Correct</span>
+          </div>
+          <button className="toggle" onClick={saveFavorite}>★ Save Favorite</button>
+        </div>
+
+        {favorites.length > 0 && (
+          <div className="card" style={{ padding: 12 }}>
+            <span className="label">Favorites</span>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {favorites.map(f => (
+                <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <button className="seg-btn" style={{ minHeight: 32, padding: "6px 10px", fontSize: 11 }} onClick={() => loadFavorite(f)}>{f.label}</button>
+                  <button onClick={() => deleteFavorite(f.id)} style={{ background: "transparent", border: "1px solid #52525b", color: "#71717a", fontSize: 14, width: 24, height: 32, borderRadius: 2, cursor: "pointer" }}>×</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="card" style={{ padding: 16 }}>
+          <span className="label"><span className="step-label">01</span>Conduit</span>
+          <div className="flex gap-2">
+            {CONDUIT_TYPES.map(c => <button key={c.id} className={`seg-btn ${conduitType === c.id ? "active" : ""}`} onClick={() => setConduitType(c.id)}>{c.label}</button>)}
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: 16 }}>
+          <span className="label"><span className="step-label">02</span>Size</span>
+          <div className="grid-6">
+            {availableSizes.map(s => <button key={s} className={`seg-btn ${size === s ? "active" : ""}`} onClick={() => setSize(s)}>{s}"</button>)}
+          </div>
+          {handBendable && <div className="info-banner"><span style={{ color: "#fbbf24" }}>HAND BENDER:</span> All major brands (Klein, Ideal, Greenlee, Milwaukee, Southwire, Gardner Bender, Ridgid) use the same take-up for this size.</div>}
+          {factorySweep && <div className="warn-banner"><span style={{ color: "#f97316" }}>FACTORY SWEEP:</span> {size}" {conduitType} uses factory sweep elbows. Not field-bent in standard practice.</div>}
+        </div>
+
+        {!handBendable && !isPVC && !factorySweep && (
+          <div className="card" style={{ padding: 16 }}>
+            <span className="label"><span className="step-label">03</span>Bender</span>
+            {largeBenders.length === 0 ? <div className="error">No bender available for this size. Add a custom one below.</div> : (
+              <select className="input-field" value={largeBenderId} onChange={e => setLargeBenderId(e.target.value)}>
+                <optgroup label="Greenlee">{largeBenders.filter(([id]) => id.startsWith("greenlee")).map(([id, b]) => <option key={id} value={id}>{b.label}</option>)}</optgroup>
+                <optgroup label="Current Tools">{largeBenders.filter(([id]) => id.startsWith("current")).map(([id, b]) => <option key={id} value={id}>{b.label}</option>)}</optgroup>
+                <optgroup label="Southwire">{largeBenders.filter(([id]) => id.startsWith("southwire")).map(([id, b]) => <option key={id} value={id}>{b.label}</option>)}</optgroup>
+                <optgroup label="Ridgid">{largeBenders.filter(([id]) => id.startsWith("ridgid")).map(([id, b]) => <option key={id} value={id}>{b.label}</option>)}</optgroup>
+                {largeBenders.filter(([id]) => id.startsWith("custom_")).length > 0 && <optgroup label="Custom">{largeBenders.filter(([id]) => id.startsWith("custom_")).map(([id, b]) => <option key={id} value={id}>{b.label}</option>)}</optgroup>}
+              </select>
+            )}
+            <div style={{ marginTop: 10 }}><button className="toggle" onClick={() => setShowCustomForm(!showCustomForm)}>+ Custom Bender</button></div>
+            {showCustomForm && (
+              <div style={{ marginTop: 10, padding: 10, background: "#0a0a0a", border: "1px solid #27272a" }}>
+                <div className="grid-2" style={{ marginBottom: 8 }}>
+                  <input className="input-field" placeholder="Name" value={customForm.name} onChange={e => setCustomForm({ ...customForm, name: e.target.value })} style={{ fontSize: 13 }} />
+                  <select className="input-field" value={customForm.conduit} onChange={e => setCustomForm({ ...customForm, conduit: e.target.value })} style={{ fontSize: 13 }}>
+                    {["EMT", "RMC", "IMC"].map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <input className="input-field" placeholder="Size" value={customForm.size} onChange={e => setCustomForm({ ...customForm, size: e.target.value })} style={{ fontSize: 13 }} />
+                  <input className="input-field" placeholder="Take-up" type="number" value={customForm.takeUp} onChange={e => setCustomForm({ ...customForm, takeUp: e.target.value })} style={{ fontSize: 13 }} />
+                  <input className="input-field" placeholder="Gain" type="number" value={customForm.gain} onChange={e => setCustomForm({ ...customForm, gain: e.target.value })} style={{ fontSize: 13 }} />
+                  <input className="input-field" placeholder="Radius (opt)" type="number" value={customForm.radius} onChange={e => setCustomForm({ ...customForm, radius: e.target.value })} style={{ fontSize: 13 }} />
+                </div>
+                <button className="seg-btn active" onClick={addCustom}>Save</button>
+              </div>
+            )}
+            {Object.keys(customBenders).length > 0 && (
+              <div style={{ marginTop: 10 }}>
+                <span className="label">Your custom benders</span>
+                {Object.entries(customBenders).map(([id, b]) => (
+                  <div key={id} style={{ display: "flex", justifyContent: "space-between", padding: 6, background: "#0a0a0a", marginBottom: 4, fontSize: 11 }}>
+                    <span>{b.label}</span>
+                    <button onClick={() => deleteCustom(id)} style={{ background: "transparent", border: "none", color: "#71717a", cursor: "pointer" }}>×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {shoe && !isPVC && !factorySweep && (
+          <div className="card" style={{ padding: 12, fontSize: 12, color: "#a1a1aa" }}>
+            <span style={{ color: "#fbbf24", fontWeight: 700 }}>SHOE: </span>
+            Take-up {shoe.takeUp}" | Gain {shoe.gain}"{shoe.radius ? ` | R ${shoe.radius}"` : ""}
+          </div>
+        )}
+
+        <div className="card" style={{ padding: 16 }}>
+          <span className="label"><span className="step-label">{handBendable || isPVC || factorySweep ? "03" : "04"}</span>Bend Type</span>
+          <div className="grid-3">
+            {BEND_TYPES.map(b => (
+              <button key={b.id} className={`bend-btn ${bendType === b.id ? "active" : ""}`} onClick={() => { setBendType(b.id); setInputs({}); }}>
+                <BendIcon type={b.id} size={26} color={bendType === b.id ? "#09090b" : "#fbbf24"} />
+                <span style={{ textAlign: "center" }}>{b.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {showAngle && !factorySweep && (
+          <div className="card" style={{ padding: 16 }}>
+            <span className="label">Angle</span>
+            <div className="grid-5">
+              {Object.keys(ANGLES).map(a => <button key={a} className={`angle-btn ${parseFloat(a) === angle ? "active" : ""}`} onClick={() => setAngle(parseFloat(a))}>{a}</button>)}
+            </div>
+          </div>
+        )}
+
+        {showSaddleType && !factorySweep && (
+          <div className="card" style={{ padding: 16 }}>
+            <span className="label">Saddle Configuration</span>
+            <div className="flex gap-2">
+              <button className={`seg-btn ${saddleType === "45_22" ? "active" : ""}`} onClick={() => setSaddleType("45_22")}>45/22.5 standard</button>
+              <button className={`seg-btn ${saddleType === "60_30" ? "active" : ""}`} onClick={() => setSaddleType("60_30")}>60/30 tighter</button>
+            </div>
+          </div>
+        )}
+
+        {showCritical && !factorySweep && (
+          <div className="card" style={{ padding: 16 }}>
+            <span className="label">Critical Bend</span>
+            <div className="flex gap-2">
+              <button className={`seg-btn ${criticalBend === "first" ? "active" : ""}`} onClick={() => setCriticalBend("first")}>First</button>
+              <button className={`seg-btn ${criticalBend === "second" ? "active" : ""}`} onClick={() => setCriticalBend("second")}>Second</button>
+            </div>
+          </div>
+        )}
+
+        {!factorySweep && (
+          <div className="card" style={{ padding: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+              <span className="label" style={{ marginBottom: 0 }}>Measurements</span>
+              <button className="toggle" onClick={reset}>Clear</button>
+            </div>
+            <div>
+              {fields.map(f => (
+                <div key={f.key} style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 12, color: "#a1a1aa", display: "block", marginBottom: 4 }}>{f.label} <span style={{ color: "#52525b" }}>({units === "metric" ? "mm" : "in"})</span></label>
+                  <input type="number" step="0.0625" inputMode="decimal" className="input-field" value={inputs[f.key] || ""} onChange={e => setInput(f.key, e.target.value)} placeholder="0" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="card">
+          <div style={{ padding: "12px 16px", borderBottom: "1px solid #27272a", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+            <span className="display" style={{ fontSize: 22, color: "#fbbf24" }}>RESULTS</span>
+            <div style={{ display: "flex", gap: 6 }}>
+              <span className="pill">{BEND_TYPES.find(b => b.id === bendType)?.label}</span>
+              {shrinkAutoCorrect && !factorySweep && <span className="pill" style={{ background: "#422006" }}>Shrink ON</span>}
+            </div>
+          </div>
+
+          <div style={{ background: "#0a0a0a", borderBottom: "1px solid #27272a", padding: 14, display: "flex", gap: 14, alignItems: "center" }}>
+            <div style={{ flex: "0 0 auto", background: "#0f0f10", border: "1px solid #27272a", borderRadius: 4, padding: 8, width: 90, height: 70, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <BendIcon type={bendType} size={44} color="#fbbf24" />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="display" style={{ fontSize: 18, color: "#fbbf24", marginBottom: 4 }}>{BEND_TYPES.find(b => b.id === bendType)?.label.toUpperCase()}</div>
+              <div style={{ fontSize: 11, color: "#d4d4d8", marginBottom: 4 }}>{BEND_TYPES.find(b => b.id === bendType)?.desc}</div>
+              <div style={{ fontSize: 10, color: "#a1a1aa" }}><span style={{ color: "#fbbf24", fontWeight: 700 }}>USE WHEN: </span>{BEND_TYPES.find(b => b.id === bendType)?.useWhen}</div>
+            </div>
+          </div>
+
+          {result.error ? (
+            <div style={{ padding: 16 }}><div className="error">{result.error}</div></div>
+          ) : (
+            <>
+              {result.marks && result.marks.length > 0 && (
+                <div style={{ background: "#050505", padding: 10, borderBottom: "1px solid #27272a" }}>
+                  <GenericDiagram marks={result.marks} units={units} />
+                </div>
+              )}
+              <div>
+                {result.rows?.map((r, i) => (
+                  <div key={i} className={`row ${r.highlight ? "row-highlight" : ""}`}>
+                    <div style={{ flex: 1 }}><div className="row-label">{r.label}</div></div>
+                    <div className="row-value">{r.value}</div>
+                  </div>
+                ))}
+              </div>
+              {result.steps && result.steps.length > 0 && (
+                <div style={{ padding: 16, borderTop: "1px solid #27272a" }}>
+                  <div className="label" style={{ marginBottom: 10 }}>Procedure</div>
+                  <div className="step-list">{result.steps.map((s, i) => <div key={i} className="step">{s}</div>)}</div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="card" style={{ padding: 16 }}>
+          <div className="label" style={{ marginBottom: 8 }}>Quick Reference</div>
+          <div style={{ fontSize: 12, color: "#a1a1aa", lineHeight: 1.6 }}>
+            <div>10° : mult 6.0 : shrink 1/16 per in</div>
+            <div>22.5° : mult 2.6 : shrink 3/16 per in</div>
+            <div>30° : mult 2.0 : shrink 1/4 per in</div>
+            <div>45° : mult 1.4 : shrink 3/8 per in</div>
+            <div>60° : mult 1.2 : shrink 1/2 per in</div>
+          </div>
+          <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #27272a", fontSize: 11, color: "#71717a", lineHeight: 1.5 }}>
+            NEC 358.26 / 344.26 / 352.26: max 360° between pull points. Hand benders 1/2 - 1-1/4 EMT, 1/2 - 1 RMC/IMC: all major brands use same take-up. Sizes 5" and 6" use factory sweep elbows.
+          </div>
+        </div>
+
+        <div className="stripe" style={{ marginTop: 16 }}></div>
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<PipeBendingCalculator />);
+</script>
+</body>
+</html>
