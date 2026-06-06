@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="description" content="Pipe Bending Calculator — field calculator for conduit bending. EMT, IMC, Rigid. Hand and mechanical benders." />
-  <meta name="theme-color" content="#09090b" />
+  <meta name="theme-color" content="#0b0d12" />
 
   <!-- PWA -->
   <link rel="manifest" href="manifest.json" />
@@ -63,6 +63,28 @@
       <div class="loading">LOADING...</div>
     </div>
   </main>
+
+
+  <!-- KHub: error handler + localStorage export stub -->
+  <script>
+  window.addEventListener('error',function(e){
+    var eb=document.getElementById('error-boundary');
+    var em=document.getElementById('error-message');
+    if(eb&&em){em.textContent=e.message||'An error occurred.';eb.hidden=false;}
+  });
+  window.addEventListener('unhandledrejection',function(e){
+    console.error('[PipeBend] Rejection:',e.reason);
+  });
+  // export/import: localStorage used only for saved calculations
+  function exportCalcState(){
+    var keys=['pipeBend_history','pipeBend_prefs'];
+    var data={};
+    keys.forEach(function(k){if(localStorage.getItem(k))data[k]=localStorage.getItem(k);});
+    var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download='pipebend-state.json';a.click();URL.revokeObjectURL(a.href);
+  }
+  </script>
 
   <!-- React + Babel CDN (required for this app) -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
