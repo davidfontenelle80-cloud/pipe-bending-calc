@@ -18,7 +18,7 @@
  * BUMP THIS VERSION STRING on every deploy that changes HTML, CSS, JS, manifest, or SW behavior.
  */
 
-const CACHE_VERSION = 'pipe-bend-v5-linebreak-fix';
+const CACHE_VERSION = 'pipe-bend-v6-house-reskin';
 
 /**
  * All URLs that make up the app shell.
@@ -36,6 +36,12 @@ const PRECACHE_URLS = [
   './js/error-boundary.js',
   './js/a11y.js',
   './js/perf.js',
+  './js/theme.js',
+  './js/sw-register.js',
+  './js/app.js',
+  './icons/favicon.svg',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
 ];
 
 // ── Install ──────────────────────────────────────────────────

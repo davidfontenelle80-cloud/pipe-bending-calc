@@ -1,8 +1,8 @@
 /**
  * app.js — Pipe Bending Calculator
  * React (via CDN + Babel standalone) conduit bending calculator.
- * Note: This file is loaded as type="text/babel" — do NOT add to sw.js PRECACHE_URLS
- * as Babel transpilation is done at runtime. Use the app-specific sw.js below.
+ * Note: This file is loaded as type="text/babel" and transpiled in the browser by
+ * Babel standalone. It IS precached by sw.js (Babel fetches it like any static file).
  */
 
 const { useState, useMemo, useEffect } = React;
@@ -103,15 +103,15 @@ function availableLargeBenders(conduit, size, customBenders) {
 const FACTORY_SWEEP_RADIUS = { "5": { standard: 24, large: 30 }, "6": { standard: 30, large: 36 } };
 
 const BendIcon = ({ type, size = 40, color = "currentColor" }) => {
-  const s = { stroke: color, strokeWidth: 3, fill: "none", strokeLinecap: "round", strokeLinejoin: "round" };
+  const s = { style: { stroke: color, fill: "none" }, strokeWidth: 3, strokeLinecap: "round", strokeLinejoin: "round" };
   const paths = {
     stub: <path d="M 5 30 L 38 30 Q 45 30 45 23 L 45 8" {...s} />,
     back2back: <path d="M 8 30 L 8 18 Q 8 10 15 10 L 45 10 Q 52 10 52 18 L 52 30" {...s} />,
     reverse90: <path d="M 8 22 L 45 22 Q 52 22 52 15 L 52 5" {...s} />,
     kicked90: <path d="M 8 30 L 38 30 Q 45 30 45 23 L 45 18 L 50 12" {...s} />,
     offset: <path d="M 5 30 L 22 30 L 38 14 L 55 14" {...s} />,
-    saddle3: <g><path d="M 5 28 L 18 28 L 28 14 L 32 14 L 42 28 L 55 28" {...s} /><rect x="26" y="26" width="8" height="6" fill={color} opacity="0.3" /></g>,
-    saddle4: <g><path d="M 5 28 L 14 28 L 22 14 L 38 14 L 46 28 L 55 28" {...s} /><rect x="20" y="26" width="20" height="6" fill={color} opacity="0.3" /></g>,
+    saddle3: <g><path d="M 5 28 L 18 28 L 28 14 L 32 14 L 42 28 L 55 28" {...s} /><rect x="26" y="26" width="8" height="6" style={{ fill: color, opacity: 0.3 }} /></g>,
+    saddle4: <g><path d="M 5 28 L 14 28 L 22 14 L 38 14 L 46 28 L 55 28" {...s} /><rect x="20" y="26" width="20" height="6" style={{ fill: color, opacity: 0.3 }} /></g>,
     rolling: <g><path d="M 5 30 L 22 30 L 38 14 L 55 14" {...s} /><path d="M 22 30 L 38 30 L 38 14" {...s} strokeDasharray="2,2" opacity="0.5" /></g>,
     parallel: <g><path d="M 5 30 L 18 30 L 32 18 L 55 18" {...s} /><path d="M 5 36 L 24 36 L 38 24 L 55 24" {...s} opacity="0.6" /></g>,
     concentric: <g><path d="M 5 35 Q 5 5 35 5" {...s} /><path d="M 5 30 Q 10 10 30 10" {...s} opacity="0.65" /></g>,
@@ -121,15 +121,15 @@ const BendIcon = ({ type, size = 40, color = "currentColor" }) => {
 };
 
 const Mark = ({ x, y, label, sublabel, symbol = "arrow" }) => {
-  const c = "#fbbf24";
+  const c = "var(--color-primary-ink)";
   return (
     <g>
-      <line x1={x} y1={y - 14} x2={x} y2={y + 14} stroke={c} strokeWidth="2" />
-      <text x={x} y={y - 22} textAnchor="middle" fill={c} fontSize="11" fontFamily="JetBrains Mono" fontWeight="700">{label}</text>
-      {sublabel && <text x={x} y={y + 30} textAnchor="middle" fill="#a1a1aa" fontSize="9" fontFamily="JetBrains Mono">{sublabel}</text>}
-      {symbol === "arrow" && <text x={x} y={y + 5} textAnchor="middle" fill={c} fontSize="14" fontWeight="700">▲</text>}
-      {symbol === "star" && <text x={x} y={y + 5} textAnchor="middle" fill={c} fontSize="14" fontWeight="700">★</text>}
-      {symbol === "notch" && <text x={x} y={y + 5} textAnchor="middle" fill={c} fontSize="14" fontWeight="700">◆</text>}
+      <line x1={x} y1={y - 14} x2={x} y2={y + 14} style={{ stroke: c }} strokeWidth="2" />
+      <text x={x} y={y - 22} textAnchor="middle" style={{ fill: c }} fontSize="11" fontFamily="JetBrains Mono" fontWeight="700">{label}</text>
+      {sublabel && <text x={x} y={y + 30} textAnchor="middle" style={{ fill: "var(--color-text-dim)" }} fontSize="9" fontFamily="JetBrains Mono">{sublabel}</text>}
+      {symbol === "arrow" && <text x={x} y={y + 5} textAnchor="middle" style={{ fill: c }} fontSize="14" fontWeight="700">▲</text>}
+      {symbol === "star" && <text x={x} y={y + 5} textAnchor="middle" style={{ fill: c }} fontSize="14" fontWeight="700">★</text>}
+      {symbol === "notch" && <text x={x} y={y + 5} textAnchor="middle" style={{ fill: c }} fontSize="14" fontWeight="700">◆</text>}
     </g>
   );
 };
@@ -139,13 +139,13 @@ const GenericDiagram = ({ marks, units }) => {
   const maxMark = Math.max(...marks.filter(m => m?.value != null).map(m => m.value), 1);
   const scale = pipeLen / (maxMark * 1.15);
   return (
-    <svg viewBox="0 0 600 140" style={{ width: "100%", background: "#0a0a0a" }}>
-      <text x="300" y="20" textAnchor="middle" fill="#fbbf24" fontSize="12" fontFamily="Bebas Neue" letterSpacing="1.5">LAYOUT ON STRAIGHT PIPE</text>
+    <svg viewBox="0 0 600 140" style={{ width: "100%", background: "var(--color-surface-3)" }}>
+      <text x="300" y="20" textAnchor="middle" style={{ fill: "var(--color-primary-ink)" }} fontSize="12" fontFamily="Bebas Neue" letterSpacing="1.5">LAYOUT ON STRAIGHT PIPE</text>
       <g>
-        <line x1={xStart} y1={74} x2={xStart + pipeLen} y2={74} stroke="#52525b" strokeWidth="2" />
-        <line x1={xStart} y1={86} x2={xStart + pipeLen} y2={86} stroke="#52525b" strokeWidth="2" />
+        <line x1={xStart} y1={74} x2={xStart + pipeLen} y2={74} style={{ stroke: "var(--color-text-faint)" }} strokeWidth="2" />
+        <line x1={xStart} y1={86} x2={xStart + pipeLen} y2={86} style={{ stroke: "var(--color-text-faint)" }} strokeWidth="2" />
       </g>
-      <text x={xStart} y={65} fill="#a1a1aa" fontSize="10" fontFamily="JetBrains Mono">END</text>
+      <text x={xStart} y={65} style={{ fill: "var(--color-text-dim)" }} fontSize="10" fontFamily="JetBrains Mono">END</text>
       {marks.map((m, i) => m?.value != null && (
         <Mark key={i} x={xStart + m.value * scale} y={80} label={fmt(m.value, units)} sublabel={m.sublabel} symbol={m.symbol || "arrow"} />
       ))}
@@ -197,10 +197,13 @@ function calculate(bendType, inputs, shoe, isPVC, angle, options, size, conduit)
   const shrinkOn = options.shrinkAutoCorrect;
   const cb = options.criticalBend || "second";
   const saddleType = options.saddleType || "45_22";
+  // Inputs are typed in the display units. All bend tables and formulas are
+  // inch-based, so convert mm input to inches here; fmt() converts back out.
+  const IN = (v, fbIn = 0) => { const n = parseFloat(v); if (isNaN(n)) return fbIn; return options.units === "metric" ? n / 25.4 : n; };
 
   switch (bendType) {
     case "stub": {
-      const stub = num(inputs.stub);
+      const stub = IN(inputs.stub);
       if (stub <= 0) return { error: "Enter stub height." };
       if (isPVC) return { rows: [{ label: "Stub height", value: fmt(stub, options.units) }, { label: "Method", value: "PVC heat-form" }], steps: pvcSteps(), marks: [{ value: stub, sublabel: "start" }] };
       const mark = stub - takeUp;
@@ -225,7 +228,7 @@ function calculate(bendType, inputs, shoe, isPVC, angle, options, size, conduit)
     }
 
     case "back2back": {
-      const stub = num(inputs.stub), b2b = num(inputs.b2b);
+      const stub = IN(inputs.stub), b2b = IN(inputs.b2b);
       if (stub <= 0 || b2b <= 0) return { error: "Enter stub height and back-to-back distance." };
       const m1 = stub - takeUp, m2 = m1 + b2b;
       return {
@@ -249,7 +252,7 @@ function calculate(bendType, inputs, shoe, isPVC, angle, options, size, conduit)
     }
 
     case "reverse90": {
-      const stub = num(inputs.stub);
+      const stub = IN(inputs.stub);
       if (stub <= 0) return { error: "Enter stub height." };
       const star = stub;
       const arrow = stub + (takeUp - gain);
@@ -273,8 +276,8 @@ function calculate(bendType, inputs, shoe, isPVC, angle, options, size, conduit)
     }
 
     case "kicked90": {
-      const stub = num(inputs.stub);
-      const kick = num(inputs.kick);
+      const stub = IN(inputs.stub);
+      const kick = IN(inputs.kick);
       if (stub <= 0 || kick <= 0 || !a) return { error: "Enter stub height, kick depth, and angle." };
       const stubMark = stub - takeUp;
       // Kick shrink: ~3/16 per inch of kick (Mike Holt / field standard)
@@ -282,7 +285,7 @@ function calculate(bendType, inputs, shoe, isPVC, angle, options, size, conduit)
       // Kick mark is measured from back of 90 along the long leg
       // For a single kick bend at angle, the bend point is approximately at the desired kick distance from end
       // We give the measurement from back of 90 to the center of the kick bend
-      const kickFromBack90 = num(inputs.kickFromBack90, 6); // default if not given
+      const kickFromBack90 = IN(inputs.kickFromBack90, 6); // default if not given
       return {
         rows: [
           { label: "Bender take-up", value: `${takeUp}"` },
@@ -306,7 +309,7 @@ function calculate(bendType, inputs, shoe, isPVC, angle, options, size, conduit)
     }
 
     case "offset": {
-      const offset = num(inputs.offset), d = num(inputs.distFromEnd);
+      const offset = IN(inputs.offset), d = IN(inputs.distFromEnd);
       if (offset <= 0 || !a) return { error: "Enter offset depth and angle." };
       const sp = offset * a.mult, sh = offset * a.shrink;
       let m1 = null, m2 = null;
@@ -339,7 +342,7 @@ function calculate(bendType, inputs, shoe, isPVC, angle, options, size, conduit)
     }
 
     case "saddle3": {
-      const obs = num(inputs.obstruction), d = num(inputs.distFromEnd);
+      const obs = IN(inputs.obstruction), d = IN(inputs.distFromEnd);
       if (obs <= 0) return { error: "Enter obstruction height." };
       // Two configurations supported:
       // 45/22.5: center 45, outers 22.5, multiplier 2.5, shrink 3/16 per inch
@@ -386,7 +389,7 @@ function calculate(bendType, inputs, shoe, isPVC, angle, options, size, conduit)
     }
 
     case "saddle4": {
-      const obs = num(inputs.obstruction), w = num(inputs.width), d = num(inputs.distFromEnd);
+      const obs = IN(inputs.obstruction), w = IN(inputs.width), d = IN(inputs.distFromEnd);
       if (obs <= 0 || w <= 0) return { error: "Enter obstruction height and width." };
       const ai = ANGLES[angle] || ANGLES[45];
       const os = obs * ai.mult, sh = obs * ai.shrink;
@@ -421,7 +424,7 @@ function calculate(bendType, inputs, shoe, isPVC, angle, options, size, conduit)
     case "rolling": {
       // CORRECTED: roll angle = arctan(horizontal / vertical), not arctan(roll/rise)
       // Field method: bend first, ROTATE pipe by roll angle, bend second (NOT flip 180)
-      const rise = num(inputs.rise), roll = num(inputs.roll);
+      const rise = IN(inputs.rise), roll = IN(inputs.roll);
       if (rise <= 0 || roll <= 0 || !a) return { error: "Enter rise, roll, and angle." };
       const t = Math.sqrt(rise*rise + roll*roll);
       const sp = t * a.mult;
@@ -454,7 +457,7 @@ function calculate(bendType, inputs, shoe, isPVC, angle, options, size, conduit)
     }
 
     case "parallel": {
-      const offset = num(inputs.offset), sc = num(inputs.spacing);
+      const offset = IN(inputs.offset), sc = IN(inputs.spacing);
       if (offset <= 0 || sc <= 0 || !a) return { error: "Enter offset depth, spacing, and angle." };
       const bs = offset * a.mult;
       const sh = offset * a.shrink;
@@ -482,7 +485,7 @@ function calculate(bendType, inputs, shoe, isPVC, angle, options, size, conduit)
     }
 
     case "concentric": {
-      const ir = num(inputs.innerRadius), sc = num(inputs.spacing), sw = num(inputs.sweep, 90);
+      const ir = IN(inputs.innerRadius), sc = IN(inputs.spacing), sw = num(inputs.sweep, 90);
       if (ir <= 0 || sc <= 0) return { error: "Enter inner pipe radius and pipe spacing." };
       const sr = (sw * Math.PI) / 180;
       const rows = [];
@@ -510,7 +513,7 @@ function calculate(bendType, inputs, shoe, isPVC, angle, options, size, conduit)
     }
 
     case "segmented": {
-      const tr = num(inputs.targetRadius), sw = num(inputs.sweep, 90), seg = Math.max(2, Math.round(num(inputs.segments, 6)));
+      const tr = IN(inputs.targetRadius), sw = num(inputs.sweep, 90), seg = Math.max(2, Math.round(num(inputs.segments, 6)));
       if (tr <= 0) return { error: "Enter target radius." };
       const dps = sw / seg;
       const sr = (sw * Math.PI) / 180;
@@ -557,6 +560,8 @@ function PipeBendingCalculator() {
   const [favorites, setFavorites] = useState([]);
   const [showCustomForm, setShowCustomForm] = useState(false);
   const [customForm, setCustomForm] = useState({ name: "", conduit: "RMC", size: "2", takeUp: "", gain: "", radius: "" });
+  const [theme, setTheme] = useState(() => (window.KHub && window.KHub.Theme ? window.KHub.Theme.current : "dark"));
+  const toggleTheme = () => { if (window.KHub && window.KHub.Theme) { window.KHub.Theme.toggle(); setTheme(window.KHub.Theme.current); } };
 
   useEffect(() => {
     setCustomBenders(STORAGE.get("custom_benders") || {});
@@ -595,8 +600,8 @@ function PipeBendingCalculator() {
     saddle4: [{ key: "obstruction", label: "Obstruction height" }, { key: "width", label: "Obstruction width" }, { key: "distFromEnd", label: "Distance from end to leading edge (optional)" }],
     rolling: [{ key: "rise", label: "Rise (vertical offset)" }, { key: "roll", label: "Roll (horizontal offset)" }],
     parallel: [{ key: "offset", label: "Offset depth" }, { key: "spacing", label: "Center-to-center pipe spacing" }],
-    concentric: [{ key: "innerRadius", label: "Inner pipe centerline radius" }, { key: "spacing", label: "Center-to-center spacing" }, { key: "sweep", label: "Total sweep (default 90)" }],
-    segmented: [{ key: "targetRadius", label: "Target centerline radius" }, { key: "sweep", label: "Total sweep (default 90)" }, { key: "segments", label: "Number of segments" }],
+    concentric: [{ key: "innerRadius", label: "Inner pipe centerline radius" }, { key: "spacing", label: "Center-to-center spacing" }, { key: "sweep", label: "Total sweep (default 90)", unit: "deg" }],
+    segmented: [{ key: "targetRadius", label: "Target centerline radius" }, { key: "sweep", label: "Total sweep (default 90)", unit: "deg" }, { key: "segments", label: "Number of segments", unit: "count" }],
   };
 
   const showAngle = ["offset", "saddle4", "rolling", "parallel", "kicked90"].includes(bendType);
@@ -630,7 +635,7 @@ function PipeBendingCalculator() {
       <div style={{ maxWidth: 800, margin: "0 auto" }}>
         <div className="stripe"></div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
-          <h1 className="display" style={{ fontSize: 40, color: "#fbbf24", margin: 0 }}>PIPE BENDING CALC</h1>
+          <h1 className="display" style={{ fontSize: 40, color: "var(--color-primary-ink)", margin: 0 }}>PIPE BENDING CALC</h1>
           <span className="pill">Field Tool</span>
         </div>
 
@@ -638,6 +643,7 @@ function PipeBendingCalculator() {
           <div style={{ display: "flex", gap: 6 }}>
             <button className={`toggle ${units === "imperial" ? "on" : ""}`} onClick={() => setUnits("imperial")}>IN</button>
             <button className={`toggle ${units === "metric" ? "on" : ""}`} onClick={() => setUnits("metric")}>MM</button>
+            <button className="toggle" onClick={toggleTheme} aria-label={theme === "light" ? "Switch to dark theme" : "Switch to light theme"}>{theme === "light" ? "DARK" : "LIGHT"}</button>
           </div>
           <div className="switch" onClick={() => setShrinkAutoCorrect(!shrinkAutoCorrect)}>
             <div className={`switch-track ${shrinkAutoCorrect ? "on" : ""}`}><div className="switch-thumb" /></div>
@@ -653,7 +659,7 @@ function PipeBendingCalculator() {
               {favorites.map(f => (
                 <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   <button className="seg-btn" style={{ minHeight: 32, padding: "6px 10px", fontSize: 11 }} onClick={() => loadFavorite(f)}>{f.label}</button>
-                  <button onClick={() => deleteFavorite(f.id)} style={{ background: "transparent", border: "1px solid #52525b", color: "#71717a", fontSize: 14, width: 24, height: 32, borderRadius: 2, cursor: "pointer" }}>×</button>
+                  <button onClick={() => deleteFavorite(f.id)} style={{ background: "transparent", border: "1px solid var(--color-border)", color: "var(--color-text-faint)", fontSize: 14, width: 24, height: 32, borderRadius: "var(--radius-sm)", cursor: "pointer" }}>×</button>
                 </div>
               ))}
             </div>
@@ -672,8 +678,8 @@ function PipeBendingCalculator() {
           <div className="grid-6">
             {availableSizes.map(s => <button key={s} className={`seg-btn ${size === s ? "active" : ""}`} onClick={() => setSize(s)}>{s}"</button>)}
           </div>
-          {handBendable && <div className="info-banner"><span style={{ color: "#fbbf24" }}>HAND BENDER:</span> All major brands (Klein, Ideal, Greenlee, Milwaukee, Southwire, Gardner Bender, Ridgid) use the same take-up for this size.</div>}
-          {factorySweep && <div className="warn-banner"><span style={{ color: "#f97316" }}>FACTORY SWEEP:</span> {size}" {conduitType} uses factory sweep elbows. Not field-bent in standard practice.</div>}
+          {handBendable && <div className="info-banner"><span style={{ color: "var(--color-info)" }}>HAND BENDER:</span> All major brands (Klein, Ideal, Greenlee, Milwaukee, Southwire, Gardner Bender, Ridgid) use the same take-up for this size.</div>}
+          {factorySweep && <div className="warn-banner"><span style={{ color: "var(--color-warning)" }}>FACTORY SWEEP:</span> {size}" {conduitType} uses factory sweep elbows. Not field-bent in standard practice.</div>}
         </div>
 
         {!handBendable && !isPVC && !factorySweep && (
@@ -690,7 +696,7 @@ function PipeBendingCalculator() {
             )}
             <div style={{ marginTop: 10 }}><button className="toggle" onClick={() => setShowCustomForm(!showCustomForm)}>+ Custom Bender</button></div>
             {showCustomForm && (
-              <div style={{ marginTop: 10, padding: 10, background: "#0a0a0a", border: "1px solid #27272a" }}>
+              <div style={{ marginTop: 10, padding: 10, background: "var(--color-surface-3)", border: "1px solid var(--color-border-muted)" }}>
                 <div className="grid-2" style={{ marginBottom: 8 }}>
                   <input className="input-field" placeholder="Name" value={customForm.name} onChange={e => setCustomForm({ ...customForm, name: e.target.value })} style={{ fontSize: 13 }} />
                   <select className="input-field" value={customForm.conduit} onChange={e => setCustomForm({ ...customForm, conduit: e.target.value })} style={{ fontSize: 13 }}>
@@ -708,9 +714,9 @@ function PipeBendingCalculator() {
               <div style={{ marginTop: 10 }}>
                 <span className="label">Your custom benders</span>
                 {Object.entries(customBenders).map(([id, b]) => (
-                  <div key={id} style={{ display: "flex", justifyContent: "space-between", padding: 6, background: "#0a0a0a", marginBottom: 4, fontSize: 11 }}>
+                  <div key={id} style={{ display: "flex", justifyContent: "space-between", padding: 6, background: "var(--color-surface-3)", marginBottom: 4, fontSize: 11 }}>
                     <span>{b.label}</span>
-                    <button onClick={() => deleteCustom(id)} style={{ background: "transparent", border: "none", color: "#71717a", cursor: "pointer" }}>×</button>
+                    <button onClick={() => deleteCustom(id)} style={{ background: "transparent", border: "none", color: "var(--color-text-faint)", cursor: "pointer" }}>×</button>
                   </div>
                 ))}
               </div>
@@ -719,8 +725,8 @@ function PipeBendingCalculator() {
         )}
 
         {shoe && !isPVC && !factorySweep && (
-          <div className="card" style={{ padding: 12, fontSize: 12, color: "#a1a1aa" }}>
-            <span style={{ color: "#fbbf24", fontWeight: 700 }}>SHOE: </span>
+          <div className="card" style={{ padding: 12, fontSize: 12, color: "var(--color-text-dim)" }}>
+            <span style={{ color: "var(--color-primary-ink)", fontWeight: 700 }}>SHOE: </span>
             Take-up {shoe.takeUp}" | Gain {shoe.gain}"{shoe.radius ? ` | R ${shoe.radius}"` : ""}
           </div>
         )}
@@ -730,7 +736,7 @@ function PipeBendingCalculator() {
           <div className="grid-3">
             {BEND_TYPES.map(b => (
               <button key={b.id} className={`bend-btn ${bendType === b.id ? "active" : ""}`} onClick={() => { setBendType(b.id); setInputs({}); }}>
-                <BendIcon type={b.id} size={26} color={bendType === b.id ? "#09090b" : "#fbbf24"} />
+                <BendIcon type={b.id} size={26} color={bendType === b.id ? "var(--color-on-primary)" : "var(--color-primary-ink)"} />
                 <span style={{ textAlign: "center" }}>{b.label}</span>
               </button>
             ))}
@@ -775,7 +781,7 @@ function PipeBendingCalculator() {
             <div>
               {fields.map(f => (
                 <div key={f.key} style={{ marginBottom: 12 }}>
-                  <label style={{ fontSize: 12, color: "#a1a1aa", display: "block", marginBottom: 4 }}>{f.label} <span style={{ color: "#52525b" }}>({units === "metric" ? "mm" : "in"})</span></label>
+                  <label style={{ fontSize: 12, color: "var(--color-text-dim)", display: "block", marginBottom: 4 }}>{f.label} <span style={{ color: "var(--color-text-faint)" }}>({f.unit ? f.unit : units === "metric" ? "mm" : "in"})</span></label>
                   <input type="number" step="0.0625" inputMode="decimal" className="input-field" value={inputs[f.key] || ""} onChange={e => setInput(f.key, e.target.value)} placeholder="0" />
                 </div>
               ))}
@@ -784,22 +790,22 @@ function PipeBendingCalculator() {
         )}
 
         <div className="card">
-          <div style={{ padding: "12px 16px", borderBottom: "1px solid #27272a", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-            <span className="display" style={{ fontSize: 22, color: "#fbbf24" }}>RESULTS</span>
+          <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--color-border-muted)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+            <span className="display" style={{ fontSize: 22, color: "var(--color-primary-ink)" }}>RESULTS</span>
             <div style={{ display: "flex", gap: 6 }}>
               <span className="pill">{BEND_TYPES.find(b => b.id === bendType)?.label}</span>
-              {shrinkAutoCorrect && !factorySweep && <span className="pill" style={{ background: "#422006" }}>Shrink ON</span>}
+              {shrinkAutoCorrect && !factorySweep && <span className="pill" style={{ background: "var(--color-warning-soft)", color: "var(--color-warning)" }}>Shrink ON</span>}
             </div>
           </div>
 
-          <div style={{ background: "#0a0a0a", borderBottom: "1px solid #27272a", padding: 14, display: "flex", gap: 14, alignItems: "center" }}>
-            <div style={{ flex: "0 0 auto", background: "#0f0f10", border: "1px solid #27272a", borderRadius: 4, padding: 8, width: 90, height: 70, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <BendIcon type={bendType} size={44} color="#fbbf24" />
+          <div style={{ background: "var(--color-surface-3)", borderBottom: "1px solid var(--color-border-muted)", padding: 14, display: "flex", gap: 14, alignItems: "center" }}>
+            <div style={{ flex: "0 0 auto", background: "var(--color-bg)", border: "1px solid var(--color-border-muted)", borderRadius: "var(--radius-sm)", padding: 8, width: 90, height: 70, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <BendIcon type={bendType} size={44} color="var(--color-primary-ink)" />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="display" style={{ fontSize: 18, color: "#fbbf24", marginBottom: 4 }}>{BEND_TYPES.find(b => b.id === bendType)?.label.toUpperCase()}</div>
-              <div style={{ fontSize: 11, color: "#d4d4d8", marginBottom: 4 }}>{BEND_TYPES.find(b => b.id === bendType)?.desc}</div>
-              <div style={{ fontSize: 10, color: "#a1a1aa" }}><span style={{ color: "#fbbf24", fontWeight: 700 }}>USE WHEN: </span>{BEND_TYPES.find(b => b.id === bendType)?.useWhen}</div>
+              <div className="display" style={{ fontSize: 18, color: "var(--color-primary-ink)", marginBottom: 4 }}>{BEND_TYPES.find(b => b.id === bendType)?.label.toUpperCase()}</div>
+              <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginBottom: 4 }}>{BEND_TYPES.find(b => b.id === bendType)?.desc}</div>
+              <div style={{ fontSize: 10, color: "var(--color-text-dim)" }}><span style={{ color: "var(--color-primary-ink)", fontWeight: 700 }}>USE WHEN: </span>{BEND_TYPES.find(b => b.id === bendType)?.useWhen}</div>
             </div>
           </div>
 
@@ -808,7 +814,7 @@ function PipeBendingCalculator() {
           ) : (
             <>
               {result.marks && result.marks.length > 0 && (
-                <div style={{ background: "#050505", padding: 10, borderBottom: "1px solid #27272a" }}>
+                <div style={{ background: "var(--color-surface-3)", padding: 10, borderBottom: "1px solid var(--color-border-muted)" }}>
                   <GenericDiagram marks={result.marks} units={units} />
                 </div>
               )}
@@ -821,7 +827,7 @@ function PipeBendingCalculator() {
                 ))}
               </div>
               {result.steps && result.steps.length > 0 && (
-                <div style={{ padding: 16, borderTop: "1px solid #27272a" }}>
+                <div style={{ padding: 16, borderTop: "1px solid var(--color-border-muted)" }}>
                   <div className="label" style={{ marginBottom: 10 }}>Procedure</div>
                   <div className="step-list">{result.steps.map((s, i) => <div key={i} className="step">{s}</div>)}</div>
                 </div>
@@ -832,14 +838,14 @@ function PipeBendingCalculator() {
 
         <div className="card" style={{ padding: 16 }}>
           <div className="label" style={{ marginBottom: 8 }}>Quick Reference</div>
-          <div style={{ fontSize: 12, color: "#a1a1aa", lineHeight: 1.6 }}>
+          <div style={{ fontSize: 12, color: "var(--color-text-dim)", lineHeight: 1.6 }}>
             <div>10° : mult 6.0 : shrink 1/16 per in</div>
             <div>22.5° : mult 2.6 : shrink 3/16 per in</div>
             <div>30° : mult 2.0 : shrink 1/4 per in</div>
             <div>45° : mult 1.4 : shrink 3/8 per in</div>
             <div>60° : mult 1.2 : shrink 1/2 per in</div>
           </div>
-          <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #27272a", fontSize: 11, color: "#71717a", lineHeight: 1.5 }}>
+          <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--color-border-muted)", fontSize: 11, color: "var(--color-text-faint)", lineHeight: 1.5 }}>
             NEC 358.26 / 344.26 / 352.26: max 360° between pull points. Hand benders 1/2 - 1-1/4 EMT, 1/2 - 1 RMC/IMC: all major brands use same take-up. Sizes 5" and 6" use factory sweep elbows.
           </div>
         </div>
