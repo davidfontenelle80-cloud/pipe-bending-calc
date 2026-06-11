@@ -629,27 +629,34 @@ function PipeBendingCalculator() {
     setCustomForm({ name: "", conduit: "RMC", size: "2", takeUp: "", gain: "", radius: "" });
   };
   const deleteCustom = (id) => { const next = { ...customBenders }; delete next[id]; setCustomBenders(next); STORAGE.set("custom_benders", next); };
+  const activeBend = BEND_TYPES.find(b => b.id === bendType);
+  const primaryResult = result && !result.error ? (result.rows?.find(r => r.highlight) || result.rows?.[0]) : null;
 
   return (
-    <div style={{ minHeight: "100vh", padding: 12 }}>
-      <div style={{ maxWidth: 800, margin: "0 auto" }}>
-        <div className="stripe"></div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
-          <h1 className="display" style={{ fontSize: 40, color: "var(--color-primary-ink)", margin: 0 }}>PIPE BENDING CALC</h1>
-          <span className="pill">Field Tool</span>
-        </div>
+    <div className="app-shell">
+      <div className="app-wrap">
+        <header className="hero">
+          <div>
+            <div className="eyebrow">Field layout calculator</div>
+            <h1 className="display hero-title">Pipe Bend</h1>
+          </div>
+          <div className="hero-badges">
+            <span className="pill">{conduitType} {size}"</span>
+            <span className="pill">{activeBend?.label}</span>
+          </div>
+        </header>
 
-        <div className="card" style={{ padding: 12, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
-          <div style={{ display: "flex", gap: 6 }}>
+        <div className="topbar">
+          <div className="toolbar-group">
             <button className={`toggle ${units === "imperial" ? "on" : ""}`} onClick={() => setUnits("imperial")}>IN</button>
             <button className={`toggle ${units === "metric" ? "on" : ""}`} onClick={() => setUnits("metric")}>MM</button>
             <button className="toggle" onClick={toggleTheme} aria-label={theme === "light" ? "Switch to dark theme" : "Switch to light theme"}>{theme === "light" ? "DARK" : "LIGHT"}</button>
           </div>
           <div className="switch" onClick={() => setShrinkAutoCorrect(!shrinkAutoCorrect)}>
             <div className={`switch-track ${shrinkAutoCorrect ? "on" : ""}`}><div className="switch-thumb" /></div>
-            <span style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>Shrink Auto-Correct</span>
+            <span>Shrink Auto-Correct</span>
           </div>
-          <button className="toggle" onClick={saveFavorite}>★ Save Favorite</button>
+          <button className="toggle" onClick={saveFavorite}>Save Favorite</button>
         </div>
 
         {favorites.length > 0 && (
@@ -666,6 +673,8 @@ function PipeBendingCalculator() {
           </div>
         )}
 
+        <div className="calc-layout">
+          <section className="setup-stack" aria-label="Calculator setup">
         <div className="card" style={{ padding: 16 }}>
           <span className="label"><span className="step-label">01</span>Conduit</span>
           <div className="flex gap-2">
@@ -789,23 +798,28 @@ function PipeBendingCalculator() {
           </div>
         )}
 
-        <div className="card">
-          <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--color-border-muted)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-            <span className="display" style={{ fontSize: 22, color: "var(--color-primary-ink)" }}>RESULTS</span>
+          </section>
+          <section className="results-stack" aria-label="Bend results">
+        <div className="card result-card">
+          <div className="result-head">
+            <div>
+              <span className="label">Result</span>
+              <span className="display result-title">Layout marks</span>
+            </div>
             <div style={{ display: "flex", gap: 6 }}>
-              <span className="pill">{BEND_TYPES.find(b => b.id === bendType)?.label}</span>
+              <span className="pill">{activeBend?.label}</span>
               {shrinkAutoCorrect && !factorySweep && <span className="pill" style={{ background: "var(--color-warning-soft)", color: "var(--color-warning)" }}>Shrink ON</span>}
             </div>
           </div>
 
-          <div style={{ background: "var(--color-surface-3)", borderBottom: "1px solid var(--color-border-muted)", padding: 14, display: "flex", gap: 14, alignItems: "center" }}>
-            <div style={{ flex: "0 0 auto", background: "var(--color-bg)", border: "1px solid var(--color-border-muted)", borderRadius: "var(--radius-sm)", padding: 8, width: 90, height: 70, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div className="bend-summary">
+            <div className="bend-icon-box">
               <BendIcon type={bendType} size={44} color="var(--color-primary-ink)" />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="display" style={{ fontSize: 18, color: "var(--color-primary-ink)", marginBottom: 4 }}>{BEND_TYPES.find(b => b.id === bendType)?.label.toUpperCase()}</div>
-              <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginBottom: 4 }}>{BEND_TYPES.find(b => b.id === bendType)?.desc}</div>
-              <div style={{ fontSize: 10, color: "var(--color-text-dim)" }}><span style={{ color: "var(--color-primary-ink)", fontWeight: 700 }}>USE WHEN: </span>{BEND_TYPES.find(b => b.id === bendType)?.useWhen}</div>
+              <div className="display bend-name">{activeBend?.label.toUpperCase()}</div>
+              <div className="bend-desc">{activeBend?.desc}</div>
+              <div className="bend-use"><span>Use when: </span>{activeBend?.useWhen}</div>
             </div>
           </div>
 
@@ -813,6 +827,12 @@ function PipeBendingCalculator() {
             <div style={{ padding: 16 }}><div className="error">{result.error}</div></div>
           ) : (
             <>
+              {primaryResult && (
+                <div className="primary-result">
+                  <div className="primary-label">{primaryResult.label}</div>
+                  <div className="primary-value">{primaryResult.value}</div>
+                </div>
+              )}
               {result.marks && result.marks.length > 0 && (
                 <div style={{ background: "var(--color-surface-3)", padding: 10, borderBottom: "1px solid var(--color-border-muted)" }}>
                   <GenericDiagram marks={result.marks} units={units} />
@@ -851,6 +871,8 @@ function PipeBendingCalculator() {
         </div>
 
         <div className="stripe" style={{ marginTop: 16 }}></div>
+          </section>
+        </div>
       </div>
     </div>
   );
