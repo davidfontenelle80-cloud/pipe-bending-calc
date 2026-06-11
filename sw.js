@@ -18,7 +18,7 @@
  * BUMP THIS VERSION STRING on every deploy that changes HTML, CSS, JS, manifest, or SW behavior.
  */
 
-const CACHE_VERSION = 'pipe-bend-v6-house-reskin';
+const CACHE_VERSION = 'pipe-bend-v7-app-icons';
 
 /**
  * All URLs that make up the app shell.
