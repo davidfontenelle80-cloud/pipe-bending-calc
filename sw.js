@@ -18,7 +18,7 @@
  * BUMP THIS VERSION STRING on every deploy that changes HTML, CSS, JS, manifest, or SW behavior.
  */
 
-const CACHE_VERSION = 'pipe-bend-v8-ui-refresh';
+const CACHE_VERSION = 'pipe-bend-v9-offline-selfhosted-react';
 
 /**
  * All URLs that make up the app shell.
@@ -38,6 +38,8 @@ const PRECACHE_URLS = [
   './js/perf.js',
   './js/theme.js',
   './js/sw-register.js',
+  './js/vendor/react.production.min.js',
+  './js/vendor/react-dom.production.min.js',
   './js/app.js',
   './icons/favicon.svg',
   './icons/icon-192.png',
@@ -89,7 +91,22 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
-  if (url.origin !== self.location.origin) return;
+  if (url.origin !== self.location.origin) {
+    // Runtime-cache Google Fonts (cache-first) so typography survives offline.
+    // Fonts are optional: CSS declares full fallback stacks (UX-STANDARDS §5).
+    if (/(^|\.)(fonts\.googleapis\.com|fonts\.gstatic\.com)$/.test(url.hostname)) {
+      event.respondWith(
+        caches.match(event.request).then(cached => cached || fetch(event.request).then(response => {
+          if (response && (response.status === 200 || response.type === 'opaque')) {
+            const copy = response.clone();
+            caches.open(CACHE_VERSION).then(cache => cache.put(event.request, copy));
+          }
+          return response;
+        }))
+      );
+    }
+    return;
+  }
 
   const isAppShell = PRECACHE_URLS.some(path => new URL(path, self.location.href).pathname === url.pathname);
   if (!isAppShell) return;

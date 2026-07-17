@@ -86,10 +86,9 @@
   }
   </script>
 
-  <!-- React + Babel CDN (required for this app) -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- React (self-hosted, precached — UX-STANDARDS §5: no CDN runtime dependencies) -->
+  <script src="js/vendor/react.production.min.js"></script>
+  <script src="js/vendor/react-dom.production.min.js"></script>
 
   <!-- KHub infra (load before app so KHub.ErrorBoundary is available) -->
   <script src="js/config.js"></script>
@@ -99,8 +98,8 @@
   <script src="js/perf.js"></script>
   <script src="js/sw-register.js"></script>
 
-  <!-- App (Babel-transpiled React) -->
-  <script type="text/babel" data-type="module" src="js/app.js"></script>
+  <!-- App (browser-ready JS compiled from js/app.jsx — edit the .jsx, then rebuild) -->
+  <script src="js/app.js"></script>
 
 </body>
 </html>
