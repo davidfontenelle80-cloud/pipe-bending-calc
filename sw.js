@@ -18,7 +18,7 @@
  * BUMP THIS VERSION STRING on every deploy that changes HTML, CSS, JS, manifest, or SW behavior.
  */
 
-const CACHE_VERSION = 'pipe-bend-v9-offline-selfhosted-react-no-pinch-zoom';
+const CACHE_VERSION = 'pipe-bend-v10-offline-selfhosted-fonts';
 
 /**
  * All URLs that make up the app shell.
@@ -32,6 +32,12 @@ const PRECACHE_URLS = [
   './css/dark-mode.css',
   './css/components.css',
   './css/responsive.css',
+  './css/fonts.css',
+  './fonts/jetbrains-mono-latin-400-normal.woff2',
+  './fonts/jetbrains-mono-latin-500-normal.woff2',
+  './fonts/jetbrains-mono-latin-600-normal.woff2',
+  './fonts/jetbrains-mono-latin-700-normal.woff2',
+  './fonts/bebas-neue-latin-400-normal.woff2',
   './js/config.js',
   './js/error-boundary.js',
   './js/a11y.js',
@@ -91,22 +97,10 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
-  if (url.origin !== self.location.origin) {
-    // Runtime-cache Google Fonts (cache-first) so typography survives offline.
-    // Fonts are optional: CSS declares full fallback stacks (UX-STANDARDS §5).
-    if (/(^|\.)(fonts\.googleapis\.com|fonts\.gstatic\.com)$/.test(url.hostname)) {
-      event.respondWith(
-        caches.match(event.request).then(cached => cached || fetch(event.request).then(response => {
-          if (response && (response.status === 200 || response.type === 'opaque')) {
-            const copy = response.clone();
-            caches.open(CACHE_VERSION).then(cache => cache.put(event.request, copy));
-          }
-          return response;
-        }))
-      );
-    }
-    return;
-  }
+  // Cross-origin requests are network-only. Fonts are now self-hosted and
+  // precached (css/fonts.css + /fonts/*.woff2), so there is no CDN runtime
+  // dependency to special-case here (UX-STANDARDS §5).
+  if (url.origin !== self.location.origin) return;
 
   const isAppShell = PRECACHE_URLS.some(path => new URL(path, self.location.href).pathname === url.pathname);
   if (!isAppShell) return;
