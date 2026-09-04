@@ -1,7 +1,12 @@
 name: encoding-check
 
 # Fails the build if any source file contains double-encoded UTF-8 (mojibake):
-# C1 control characters (U+0080â€“U+009F)+Ü‹F†RR´dddB&WÆ6VÖVçB6†&7FW"à¢2¦W&òFWVæFVæ6–W2(	B'Vç2öâ&&RæöFRÂ6òF†—26ÖRv÷&¶fÆ÷rG&÷2–çFòç¢2´‡V"&Wòv†WF†W"÷"¹½Ğ¥Ğ¡…Ì„Á…­…”¹©Í½¸¸()½¸è( push:
+# C1 control characters (U+0080â€“U+009F) or the U+FFFD replacement character.
+# Zero dependencies â€” runs on bare node, so this same workflow drops into any
+# KHub app repo whether or not it has a package.json.
+
+on:
+  push:
     branches: [main]
   pull_request:
   workflow_dispatch:
