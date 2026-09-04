@@ -1,0 +1,18 @@
+name: encoding-check
+
+# Fails the build if any source file contains double-encoded UTF-8 (mojibake):
+# C1 control characters (U+0080â€“U+009F)+Ü‹F†RR´dddB&WÆ6VÖVçB6†&7FW"à¢2¦W&òFWVæFVæ6–W2(	B'Vç2öâ&&RæöFRÂ6òF†—26ÖRv÷&¶fÆ÷rG&÷2–çFòç¢2´‡V"&Wòv†WF†W"÷"¹½Ğ¥Ğ¡…Ì„Á…­…”¹©Í½¸¸()½¸è( push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  encoding:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Check for mojibake / broken encoding
+        run: node scripts/check-encoding.mjs .
